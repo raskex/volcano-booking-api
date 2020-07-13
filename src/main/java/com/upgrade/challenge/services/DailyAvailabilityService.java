@@ -45,8 +45,8 @@ public class DailyAvailabilityService {
 		
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern(BookingValidator.DATE_FORMAT);
 		LocalDate consecutiveDate = LocalDate.parse(from, formatter);
-		LocalDate endDate = LocalDate.parse(to, formatter);
-		List<DailyAvailability> availabilities = dailyAvailabilityRepository.findAllByDateBetween(from, to);
+		LocalDate endDate = LocalDate.parse(to, formatter).minusDays(1);
+		List<DailyAvailability> availabilities = dailyAvailabilityRepository.findAllByDateBetween(from, endDate.toString());
 		for (DailyAvailability dailyAvailability : availabilities) {
 			dailyAvailability.setGuests(BookingValidator.MAX_CAPACITY - dailyAvailability.getGuests());
 			LocalDate currentDate = LocalDate.parse(dailyAvailability.getDate(), formatter);
@@ -57,7 +57,7 @@ public class DailyAvailabilityService {
 			availabilityResult.add(dailyAvailability);
 			consecutiveDate = consecutiveDate.plusDays(1);
 		}
-		while (consecutiveDate.isBefore(endDate)) {
+		while (!consecutiveDate.isAfter(endDate)) {
 			availabilityResult.add(new DailyAvailability(consecutiveDate.toString(), BookingValidator.MAX_CAPACITY));
 			consecutiveDate = consecutiveDate.plusDays(1);
 		}

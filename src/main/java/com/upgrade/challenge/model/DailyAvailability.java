@@ -32,9 +32,9 @@ public class DailyAvailability {
 	public DailyAvailability() {
 	}
 	
-	public DailyAvailability(String date, Integer people) {
+	public DailyAvailability(String date, Integer guests) {
 		this.date = date;
-		this.guests = people;
+		this.guests = guests;
 	}
 	
 	public void addBooking(Integer guests) {

@@ -25,7 +25,7 @@ public class BookingValidator {
 	
 	public static String DATE_FORMAT;
 
-	private static DateTimeFormatter formatter;
+	public static DateTimeFormatter formatter;
 	
 	private static String ARRIVAL_DAYS_AHEAD_ERROR_MESSAGE;
 

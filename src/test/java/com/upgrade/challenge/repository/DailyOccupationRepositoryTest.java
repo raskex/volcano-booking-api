@@ -15,24 +15,24 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import com.upgrade.challenge.model.DailyAvailability;
+import com.upgrade.challenge.model.DailyOccupation;
 
 @RunWith(SpringRunner.class)
 @DataJpaTest
-public class DailyAvailabilityRepositoryTest {
+public class DailyOccupationRepositoryTest {
 
 	@Autowired
     private TestEntityManager entityManager;
 	
 	@Autowired
-	private DailyAvailabilityRepository dailyAvailabilityRepository;
+	private DailyOccupationRepository dailyAvailabilityRepository;
 	
 	@Before
 	public void setup() {
-		DailyAvailability dailyAvailability1 = new DailyAvailability("2020-09-01", 1);
-		DailyAvailability dailyAvailability2 = new DailyAvailability("2020-09-02", 2);
-		DailyAvailability dailyAvailability3 = new DailyAvailability("2020-09-03", 3);
-		DailyAvailability dailyAvailability4 = new DailyAvailability("2020-09-04", 4);
+		DailyOccupation dailyAvailability1 = new DailyOccupation("2020-09-01", 1);
+		DailyOccupation dailyAvailability2 = new DailyOccupation("2020-09-02", 2);
+		DailyOccupation dailyAvailability3 = new DailyOccupation("2020-09-03", 3);
+		DailyOccupation dailyAvailability4 = new DailyOccupation("2020-09-04", 4);
 		entityManager.persist(dailyAvailability1);
 		entityManager.persist(dailyAvailability2);
 		entityManager.persist(dailyAvailability3);
@@ -41,7 +41,7 @@ public class DailyAvailabilityRepositoryTest {
 	}
 	@Test
 	public void testWhenFindAllByDateBetween() {
-		List<DailyAvailability> dayAvailabilitiesFound = dailyAvailabilityRepository.findAllByDateBetween("2020-09-02", "2020-09-03"); 
+		List<DailyOccupation> dayAvailabilitiesFound = dailyAvailabilityRepository.findAllByDateBetween("2020-09-02", "2020-09-03");
 
 		assertNotNull(dayAvailabilitiesFound);
 		assertEquals(2, dayAvailabilitiesFound.size());

@@ -47,10 +47,11 @@ public class BookingService {
 	public void delete(String bookingId) throws InputFormatException, BookingNotFoundException, AvailabilityException, BookingException {
 		Booking booking = get(bookingId);
 		BookingValidator.validatePastDate(booking.getFromDay(), CANCEL);
-		dailyAvailabilityService.releaseAvailability(get(bookingId));
+		dailyAvailabilityService.releaseAvailability(booking);
 	    bookingRepository.deleteById(Integer.valueOf(bookingId));
 	}
 
+	@Transactional
 	public Boolean edit(String bookingId, BookingRequest bookingRequest) throws AvailabilityException, BookingException, InputFormatException, BookingNotFoundException {
 		Booking storedBooking = get(bookingId);
 		BookingValidator.validatePastDate(storedBooking.getFromDay(), EDIT);
@@ -65,7 +66,7 @@ public class BookingService {
 				|| editedBooking.getToDay().compareTo(storedBooking.getToDay()) > 0 || editedGuests > storedGuests) {
 			dailyAvailabilityService.releaseAvailability(storedBooking);
 			this.add(bookingRequest);
-			hasChanges = true;
+			return true;
 		} else {
 			// Release availability in case of a later arrival.
 			if (storedBooking.getFromDay().compareTo(editedBooking.getFromDay()) < 0) {

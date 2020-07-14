@@ -5,9 +5,9 @@ import java.util.List;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
-import com.upgrade.challenge.model.DailyAvailability;
+import com.upgrade.challenge.model.DailyOccupation;
 
-public interface DailyAvailabilityRepository extends CrudRepository<DailyAvailability, Integer>{
+public interface DailyOccupationRepository extends CrudRepository<DailyOccupation, Integer>{
 
 	/**
 	 * Returns true if there is any date with not enough availability for the amount of guests.
@@ -22,6 +22,6 @@ public interface DailyAvailabilityRepository extends CrudRepository<DailyAvailab
 	 * @param from
 	 * @param to
 	 */
-	List<DailyAvailability> findAllByDateBetween(@Param("from") String from, @Param("to") String to);
+	List<DailyOccupation> findAllByDateBetween(@Param("from") String from, @Param("to") String to);
 
 }

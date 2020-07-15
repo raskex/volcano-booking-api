@@ -65,20 +65,8 @@ public class BookingController {
 			return new ResponseEntity<String>(String.format("Booking ID: %s succesfully modified.", bookingId), HttpStatus.OK);
 		}
 
-		// If the stored booking has no differences against request.
-//		return new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
 		return ResponseEntity.ok(
 				String.format("Booking ID: %s not modified. There were no differences against the stored booking.", bookingId));
 	}
 
-//	@PostMapping(path="/book", consumes = {MediaType.APPLICATION_JSON_VALUE})
-//	public ResponseEntity<String> book(@Valid @RequestBody Booking booking, BindingResult bindingResult) throws BookingException, AvailabilityException, InputFormatException {
-//        if (!bindingResult.hasErrors()) {
-//    		int bookingId = bookingService.add(booking.getFromDay(), booking.getToDay(), String.valueOf(booking.getTotalGuests()));
-//    		return new ResponseEntity<String>(String.format("Booking succesfull. Booking ID: %d", bookingId), HttpStatus.OK);
-//        } else {
-//            throw new InputFormatException(bindingResult.getFieldError().getDefaultMessage());
-//        }
-//	}
-	
 }

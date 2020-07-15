@@ -51,7 +51,7 @@ public class BookingServiceTest {
         }
     }
  
-	private LocalDate now = LocalDate.now();
+	private static LocalDate now = LocalDate.now();
 	
     @Autowired
     private BookingService bookingService;
@@ -252,7 +252,7 @@ public class BookingServiceTest {
 		verify(bookingRepository, times(0)).save(any(Booking.class));
     }
     
-    private Booking createBooking(int id) {
+    public static Booking createBooking(int id) {
     	Booking booking = new Booking();
     	booking.setId(id);
     	booking.setEmail("some@email.com");
@@ -264,7 +264,7 @@ public class BookingServiceTest {
     	return booking;
     }
 
-    private BookingRequest createBookingRequest() {
+    public static BookingRequest createBookingRequest() {
     	BookingRequest bookingRequest = new BookingRequest();
     	bookingRequest.setEmail("some@email.com");
     	bookingRequest.setFirstName("name");

@@ -5,8 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
 
-import javax.transaction.Transactional;
-
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,7 +32,6 @@ public class VolcanoIntegrationTest {
 		@LocalServerPort
 		private int port;
 		
-		@Transactional
 		@Test
 		public void testBookAndGetAndEditAndDeleteBooking() throws Exception {
 			String url_booking = BASE_URL.concat(String.valueOf(port)).concat(BOOKING_ENDPOINT);

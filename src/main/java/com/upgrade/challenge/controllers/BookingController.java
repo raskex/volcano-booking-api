@@ -39,12 +39,11 @@ public class BookingController {
 		return new ResponseEntity<Booking>(bookingService.get(bookingId), HttpStatus.OK);
 	}
 
-	@PostMapping(path= "/book", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
+	@PostMapping(path= "/", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
 	public ResponseEntity<String> book(@Valid @RequestBody BookingRequest booking)
 			throws BookingException, AvailabilityException, InputFormatException {
 		
-    		return new ResponseEntity<String>(
-    				String.format("Booking succesfull. Booking ID: %d", bookingService.add(booking)), HttpStatus.OK);
+		return new ResponseEntity<String>(String.valueOf(bookingService.add(booking)), HttpStatus.OK);
 	}
 
 	@DeleteMapping(path= "/{bookingId}", produces = MediaType.TEXT_PLAIN_VALUE)

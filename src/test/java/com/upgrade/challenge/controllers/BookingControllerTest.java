@@ -75,7 +75,7 @@ public class BookingControllerTest {
         when(bookingService.add(any(BookingRequest.class))).thenReturn(33);
 
         mvc.perform(MockMvcRequestBuilders
-        	      .post("/booking/book")
+        		  .post("/booking/")
         	      .contentType(MediaType.APPLICATION_JSON)
         	      .content(new ObjectMapper().writeValueAsString(bookingRequest))
         	      .accept(MediaType.TEXT_PLAIN))
@@ -89,7 +89,7 @@ public class BookingControllerTest {
         when(bookingService.add(any(BookingRequest.class))).thenThrow(AvailabilityException.class);
 
         mvc.perform(MockMvcRequestBuilders
-        	      .post("/booking/book")
+        	      .post("/booking/")
         	      .contentType(MediaType.APPLICATION_JSON)
         	      .content(new ObjectMapper().writeValueAsString(bookingRequest))
         	      .accept(MediaType.TEXT_PLAIN))

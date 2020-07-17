@@ -37,8 +37,11 @@ public class BookingService {
 	@Transactional
 //	@Retryable(value = {BatchUpdateException.class, DataIntegrityViolationException.class, ObjectOptimisticLockingFailureException.class}, maxAttempts = 5)
 	public Integer add(BookingRequest bookingRequest) throws BookingException, AvailabilityException, InputFormatException {
-		dailyAvailabilityService.validateAvailability(bookingRequest.getFromDay(), bookingRequest.getToDay(), bookingRequest.getGuests(), true);
-		Booking booking = new Booking(bookingRequest);
+		return add(new Booking(bookingRequest));
+	}
+
+	private Integer add(Booking booking) throws BookingException, AvailabilityException, InputFormatException {
+		dailyAvailabilityService.validateAvailability(booking.getFromDay(), booking.getToDay(), String.valueOf(booking.getGuests()), true);
 		dailyAvailabilityService.blockAvailability(booking.getFromDay(), booking.getToDay(), booking.getGuests());
 		return bookingRepository.save(booking).getId();
 	}
@@ -65,7 +68,7 @@ public class BookingService {
 		if (editedBooking.getFromDay().compareTo(storedBooking.getFromDay()) < 0 
 				|| editedBooking.getToDay().compareTo(storedBooking.getToDay()) > 0 || editedGuests > storedGuests) {
 			dailyAvailabilityService.releaseAvailability(storedBooking);
-			this.add(bookingRequest);
+			this.add(editedBooking);
 			return true;
 		} else {
 			// Release availability in case of a later arrival.
@@ -87,7 +90,7 @@ public class BookingService {
 		}
 		
 		if (hasChanges || !(editedBooking.getFirstName().equalsIgnoreCase(storedBooking.getFirstName()) 
-				&& editedBooking.getFirstName().equalsIgnoreCase(storedBooking.getFirstName())
+				&& editedBooking.getLastName().equalsIgnoreCase(storedBooking.getLastName())
 				&& editedBooking.getEmail().equalsIgnoreCase(storedBooking.getEmail()))) {
 			bookingRepository.save(editedBooking);
 			return true;

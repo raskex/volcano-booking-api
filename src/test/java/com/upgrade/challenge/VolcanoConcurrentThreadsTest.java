@@ -133,10 +133,13 @@ public class VolcanoConcurrentThreadsTest {
 	}
 	
 	private void runMultithreaded(Runnable runnable, int threadCount) throws InterruptedException {
+		Thread[] threads = new Thread[threadCount];
 		for (int i = 0; i < threadCount; i++) {
-			Thread t = new Thread(runnable);
-			t.start();
-			t.join();
+			threads[i] = new Thread(runnable);
+			threads[i].start();
+		}
+		for (int i = 0; i < threadCount; i++) {
+			threads[i].join();
 		}
 	}
 

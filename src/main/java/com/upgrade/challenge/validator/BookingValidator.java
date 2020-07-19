@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 
 import com.upgrade.challenge.exception.BookingException;
 import com.upgrade.challenge.exception.InputFormatException;
-import com.upgrade.challenge.services.DailyAvailabilityService;
 
 @Component
 public class BookingValidator {
@@ -23,7 +22,7 @@ public class BookingValidator {
 
 	public static int MAX_CAPACITY;
 	
-	public static String DATE_FORMAT;
+	private static String DATE_FORMAT;
 
 	public static DateTimeFormatter formatter;
 	
@@ -44,6 +43,8 @@ public class BookingValidator {
 	private static String EXPIRED_BOOKING_EXCEPTION = "It's too late to %s this booking.";
 
 	private static String PAST_DAY_EXCEPTION = "Checkin date is a past day.";
+
+	private static String GUESTS = "Guests";
 
 	@Autowired
 	public void setDateFormat(@Value("${volcano.date_format}") String format) {
@@ -84,10 +85,10 @@ public class BookingValidator {
 				throw new InputFormatException(String.format(NOT_ENOUGH_CAPACITY_EXCEPTION));
 			}
 			if (number < 1) {
-				throw new InputFormatException(String.format(NUMBER_FORMAT_EXCEPTION, DailyAvailabilityService.GUESTS));
+				throw new InputFormatException(String.format(NUMBER_FORMAT_EXCEPTION, GUESTS));
 			}
 		} catch (NumberFormatException e) {
-			throw new InputFormatException(String.format(NUMBER_FORMAT_EXCEPTION, DailyAvailabilityService.GUESTS));
+			throw new InputFormatException(String.format(NUMBER_FORMAT_EXCEPTION, GUESTS));
 		}
 	}
 	

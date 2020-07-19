@@ -3,10 +3,11 @@ package com.upgrade.challenge.repository;
 import java.util.List;
 
 import org.springframework.data.repository.CrudRepository;
-import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import com.upgrade.challenge.model.DailyOccupation;
 
+@Repository
 public interface DailyOccupationRepository extends CrudRepository<DailyOccupation, Integer>{
 
 	/**
@@ -15,13 +16,21 @@ public interface DailyOccupationRepository extends CrudRepository<DailyOccupatio
 	 * @param to
 	 * @param guests
 	 */
-	Boolean existsByDateBetweenAndGuestsGreaterThan(@Param("from") String from, @Param("to") String to, @Param("guests") Integer guests);
+	Boolean existsByDateBetweenAndGuestsGreaterThan(String from, String to, Integer guests);
 
 	/**
 	 * Find the Daily Availability for a date interval.
 	 * @param from
 	 * @param to
 	 */
-	List<DailyOccupation> findAllByDateBetween(@Param("from") String from, @Param("to") String to);
+	List<DailyOccupation> findAllByDateBetween(String from, String to);
+
+	/**
+	 * Find the Daily Availability for a date interval ordered by date asc.
+	 * @param from
+	 * @param to
+	 * @return
+	 */
+	List<DailyOccupation> findAllByDateBetweenOrderByDateAsc(String from, String to);
 
 }

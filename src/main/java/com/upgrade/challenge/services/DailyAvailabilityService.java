@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.transaction.Transactional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -11,7 +13,6 @@ import org.springframework.util.StringUtils;
 import com.upgrade.challenge.exception.AvailabilityException;
 import com.upgrade.challenge.exception.BookingException;
 import com.upgrade.challenge.exception.InputFormatException;
-import com.upgrade.challenge.model.Booking;
 import com.upgrade.challenge.model.DailyAvailability;
 import com.upgrade.challenge.model.DailyOccupation;
 import com.upgrade.challenge.repository.DailyOccupationRepository;
@@ -22,8 +23,6 @@ public class DailyAvailabilityService {
 
 	@Autowired
 	private DailyOccupationRepository dailyOccupationRepository;
-
-	public static String GUESTS = "Guests";
 
 	public List<DailyAvailability> getAvailability(String from, String to) throws BookingException, InputFormatException {
 		LocalDate now = LocalDate.now();
@@ -43,7 +42,7 @@ public class DailyAvailabilityService {
 
 		LocalDate consecutiveDate = LocalDate.parse(from, BookingValidator.formatter);
 		LocalDate endDate = LocalDate.parse(to, BookingValidator.formatter).minusDays(1);
-		List<DailyOccupation> occupabilities = dailyOccupationRepository.findAllByDateBetween(from, endDate.toString());
+		List<DailyOccupation> occupabilities = dailyOccupationRepository.findAllByDateBetweenOrderByDateAsc(from, endDate.toString());
 		for (DailyOccupation dailyOccupation : occupabilities) {
 			DailyAvailability dailyAvailability = new DailyAvailability(dailyOccupation.getDate(), BookingValidator.MAX_CAPACITY - dailyOccupation.getGuests());
 			LocalDate currentDate = LocalDate.parse(dailyOccupation.getDate(), BookingValidator.formatter);
@@ -75,18 +74,21 @@ public class DailyAvailabilityService {
 		}
 	}
 
+	@Transactional
 	public void blockAvailability(String from, String to, Integer guests) throws AvailabilityException {
 		List<DailyOccupation> daysToBlock = new LinkedList<DailyOccupation>();
 		LocalDate consecutiveDate = LocalDate.parse(from, BookingValidator.formatter);
 		LocalDate endDate = LocalDate.parse(to, BookingValidator.formatter).minusDays(1);
-		for (DailyOccupation dailyAvailability : dailyOccupationRepository.findAllByDateBetween(from, endDate.toString())) {
-			dailyAvailability.addBooking(guests);
-			LocalDate currentDate = LocalDate.parse(dailyAvailability.getDate(), BookingValidator.formatter);
+
+		List<DailyOccupation> occupabilities = dailyOccupationRepository.findAllByDateBetweenOrderByDateAsc(from, endDate.toString());
+		for (DailyOccupation dailyOccupation : occupabilities) {
+			dailyOccupation.setGuests(dailyOccupation.getGuests() + guests);
+			daysToBlock.add(dailyOccupation);
+			LocalDate currentDate = LocalDate.parse(dailyOccupation.getDate(), BookingValidator.formatter);
 			while (consecutiveDate.isBefore(currentDate)) {
 				daysToBlock.add(new DailyOccupation(consecutiveDate.toString(), guests));
 				consecutiveDate = consecutiveDate.plusDays(1);
 			}
-			daysToBlock.add(dailyAvailability);
 			consecutiveDate = consecutiveDate.plusDays(1);
 		}
 		while (!consecutiveDate.isAfter(endDate)) {
@@ -96,16 +98,14 @@ public class DailyAvailabilityService {
 		dailyOccupationRepository.saveAll(daysToBlock);
 	}
 
-	public void releaseAvailability(Booking booking) throws AvailabilityException {
-		releaseAvailability(booking.getFromDay(), booking.getToDay(), booking.getGuests());
-	}
-
+	@Transactional
 	public void releaseAvailability(String from, String to, Integer guests) {
 		String endBookingDate = LocalDate.parse(to, BookingValidator.formatter).minusDays(1).toString();
 		List<DailyOccupation> daysToRelease = new LinkedList<DailyOccupation>();
-		for (DailyOccupation dailyAvailability : dailyOccupationRepository.findAllByDateBetween(from, endBookingDate)) {
-			dailyAvailability.cancelBooking(guests);
-			daysToRelease.add(dailyAvailability);
+		List<DailyOccupation> occupability = dailyOccupationRepository.findAllByDateBetween(from, endBookingDate);
+		for (DailyOccupation dailyOccupation : occupability) {
+			dailyOccupation.setGuests(dailyOccupation.getGuests() - guests);
+			daysToRelease.add(dailyOccupation);
 		}
 		dailyOccupationRepository.saveAll(daysToRelease);
 	}

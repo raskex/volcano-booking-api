@@ -31,7 +31,6 @@ public class BookingRequest {
     @NotNull(message = "email is required")
 	private String email;
 	
-	public BookingRequest() {
-	}
+	public BookingRequest() {}
 
 }

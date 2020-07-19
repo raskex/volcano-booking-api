@@ -118,7 +118,7 @@ public class BookingServiceTest {
     	bookingService.delete("33");
 
 		verify(bookingRepository, times(1)).deleteById(33);
-		verify(dailyAvailabilityService, times(1)).releaseAvailability(booking);
+		verify(dailyAvailabilityService, times(1)).releaseAvailability(anyString(), anyString(), anyInt());
 		verify(bookingRepository, times(1)).findById(anyInt());
     }
     
@@ -154,7 +154,6 @@ public class BookingServiceTest {
 
     	assertTrue(edited);
 		verify(bookingRepository, times(1)).findById(33);
-		verify(dailyAvailabilityService, times(0)).releaseAvailability(any(Booking.class));
 		verify(dailyAvailabilityService, times(1)).releaseAvailability(anyString(), anyString(), anyInt());
 		verify(bookingRepository, times(1)).save(any(Booking.class));
     }
@@ -173,7 +172,6 @@ public class BookingServiceTest {
 
     	assertTrue(edited);
 		verify(bookingRepository, times(1)).findById(33);
-		verify(dailyAvailabilityService, times(0)).releaseAvailability(any(Booking.class));
 		verify(dailyAvailabilityService, times(1)).releaseAvailability(anyString(), anyString(), anyInt());
 		verify(bookingRepository, times(1)).save(any(Booking.class));
     }
@@ -192,7 +190,6 @@ public class BookingServiceTest {
 
     	assertTrue(edited);
 		verify(bookingRepository, times(1)).findById(33);
-		verify(dailyAvailabilityService, times(0)).releaseAvailability(any(Booking.class));
 		verify(dailyAvailabilityService, times(1)).releaseAvailability(anyString(), anyString(), anyInt());
 		verify(bookingRepository, times(1)).save(any(Booking.class));
     }
@@ -212,8 +209,7 @@ public class BookingServiceTest {
 
     	assertTrue(edited);
 		verify(bookingRepository, times(1)).findById(33);
-		verify(dailyAvailabilityService, times(1)).releaseAvailability(any(Booking.class));
-		verify(dailyAvailabilityService, times(0)).releaseAvailability(anyString(), anyString(), anyInt());
+		verify(dailyAvailabilityService, times(1)).releaseAvailability(anyString(), anyString(), anyInt());
 		verify(bookingRepository, times(1)).save(any(Booking.class));
     }
     
@@ -230,7 +226,6 @@ public class BookingServiceTest {
 
     	assertTrue(edited);
 		verify(bookingRepository, times(1)).findById(33);
-		verify(dailyAvailabilityService, times(0)).releaseAvailability(any(Booking.class));
 		verify(dailyAvailabilityService, times(0)).releaseAvailability(anyString(), anyString(), anyInt());
 		verify(bookingRepository, times(1)).save(any(Booking.class));
     }
@@ -247,7 +242,6 @@ public class BookingServiceTest {
 
     	assertFalse(edited);
 		verify(bookingRepository, times(1)).findById(33);
-		verify(dailyAvailabilityService, times(0)).releaseAvailability(any(Booking.class));
 		verify(dailyAvailabilityService, times(0)).releaseAvailability(anyString(), anyString(), anyInt());
 		verify(bookingRepository, times(0)).save(any(Booking.class));
     }

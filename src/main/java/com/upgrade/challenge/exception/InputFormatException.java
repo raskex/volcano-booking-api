@@ -1,6 +1,6 @@
 package com.upgrade.challenge.exception;
 
-public class InputFormatException extends Exception {
+public class InputFormatException extends RuntimeException {
 
 	private static final long serialVersionUID = 1L;
 

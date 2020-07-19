@@ -1,6 +1,6 @@
 package com.upgrade.challenge.exception;
 
-public class BookingException extends Exception {
+public class BookingException extends RuntimeException {
 
 	private static final long serialVersionUID = 1L;
 

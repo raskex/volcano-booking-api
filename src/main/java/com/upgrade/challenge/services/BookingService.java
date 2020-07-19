@@ -1,8 +1,13 @@
 package com.upgrade.challenge.services;
 
+import java.sql.BatchUpdateException;
+
 import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 import com.upgrade.challenge.exception.AvailabilityException;
@@ -35,12 +40,14 @@ public class BookingService {
 	}
 
 	@Transactional
-//	@Retryable(value = {BatchUpdateException.class, DataIntegrityViolationException.class, ObjectOptimisticLockingFailureException.class}, maxAttempts = 5)
+	@Retryable(value = {BatchUpdateException.class, DataIntegrityViolationException.class, ObjectOptimisticLockingFailureException.class}, maxAttempts = 5)
 	public Integer add(BookingRequest bookingRequest) throws BookingException, AvailabilityException, InputFormatException {
 		return add(new Booking(bookingRequest));
 	}
 
-	private Integer add(Booking booking) throws BookingException, AvailabilityException, InputFormatException {
+	@Transactional
+	@Retryable(value = {BatchUpdateException.class, DataIntegrityViolationException.class, ObjectOptimisticLockingFailureException.class}, maxAttempts = 5)
+	public Integer add(Booking booking) throws BookingException, AvailabilityException, InputFormatException {
 		dailyAvailabilityService.validateAvailability(booking.getFromDay(), booking.getToDay(), String.valueOf(booking.getGuests()), true);
 		dailyAvailabilityService.blockAvailability(booking.getFromDay(), booking.getToDay(), booking.getGuests());
 		return bookingRepository.save(booking).getId();
@@ -50,11 +57,12 @@ public class BookingService {
 	public void delete(String bookingId) throws InputFormatException, BookingNotFoundException, AvailabilityException, BookingException {
 		Booking booking = get(bookingId);
 		BookingValidator.validatePastDate(booking.getFromDay(), CANCEL);
-		dailyAvailabilityService.releaseAvailability(booking);
+		dailyAvailabilityService.releaseAvailability(booking.getFromDay(), booking.getToDay(), booking.getGuests());
 	    bookingRepository.deleteById(Integer.valueOf(bookingId));
 	}
 
 	@Transactional
+	@Retryable(value = {BatchUpdateException.class, DataIntegrityViolationException.class, ObjectOptimisticLockingFailureException.class}, maxAttempts = 5)
 	public Boolean edit(String bookingId, BookingRequest bookingRequest) throws AvailabilityException, BookingException, InputFormatException, BookingNotFoundException {
 		Booking storedBooking = get(bookingId);
 		BookingValidator.validatePastDate(storedBooking.getFromDay(), EDIT);
@@ -67,7 +75,7 @@ public class BookingService {
 		boolean hasChanges = false;
 		if (editedBooking.getFromDay().compareTo(storedBooking.getFromDay()) < 0 
 				|| editedBooking.getToDay().compareTo(storedBooking.getToDay()) > 0 || editedGuests > storedGuests) {
-			dailyAvailabilityService.releaseAvailability(storedBooking);
+			dailyAvailabilityService.releaseAvailability(storedBooking.getFromDay(), storedBooking.getToDay(), storedBooking.getGuests());
 			this.add(editedBooking);
 			return true;
 		} else {

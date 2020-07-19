@@ -1,5 +1,6 @@
 package com.upgrade.challenge.handlers;
 
+import java.sql.BatchUpdateException;
 import java.util.stream.Collectors;
 
 import javax.validation.ConstraintViolationException;
@@ -43,6 +44,16 @@ public class VolcanoExceptionHandler extends ResponseEntityExceptionHandler {
 	public ResponseEntity<?> handleBookingException(BookingException e) {
 		return ResponseEntity.badRequest().body(e.getMessage());
 	}
+
+	@ExceptionHandler(ConstraintViolationException.class)
+	public ResponseEntity<?> handleConstraintViolationException(ConstraintViolationException e) {
+		return ResponseEntity.badRequest().body("Errors: " + e.getMessage());
+	}
+	
+	@ExceptionHandler(BatchUpdateException.class)
+	public ResponseEntity<?> handleBatchUpdateException(BatchUpdateException e) {
+		return ResponseEntity.badRequest().body("Errors: " + e.getMessage());
+	}
 	
 	@ExceptionHandler(InputFormatException.class)
 	public ResponseEntity<?> handleInputFormatException(InputFormatException e) {
@@ -52,11 +63,6 @@ public class VolcanoExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(InvalidFormatException.class)
 	public ResponseEntity<?> handleInvalidFormatException(InvalidFormatException e) {
 		return ResponseEntity.badRequest().body(e.getMessage());
-	}
-	
-	@ExceptionHandler(ConstraintViolationException.class)
-	public final ResponseEntity<Object> handleConstraintViolationExceptions(ConstraintViolationException ex) {
-		return ResponseEntity.badRequest().body(String.format("Errors: %s", ex.getMessage()));
 	}
 	
 	@ExceptionHandler(EmptyResultDataAccessException.class)

@@ -1,6 +1,6 @@
 package com.upgrade.challenge.exception;
 
-public class AvailabilityException extends Exception {
+public class AvailabilityException extends RuntimeException {
 
 	private static final long serialVersionUID = 1L;
 

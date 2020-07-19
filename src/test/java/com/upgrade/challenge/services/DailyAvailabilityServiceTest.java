@@ -61,7 +61,7 @@ public class DailyAvailabilityServiceTest {
 		days.add(new DailyOccupation(now.plusDays(1).toString(), 2));
 		days.add(new DailyOccupation(now.plusDays(2).toString(), 3));
 		days.add(new DailyOccupation(now.plusDays(5).toString(), 10));
-		when(dailyAvailabilityRepository.findAllByDateBetween(anyString(), anyString())).thenReturn(days);
+		when(dailyAvailabilityRepository.findAllByDateBetweenOrderByDateAsc(anyString(), anyString())).thenReturn(days);
 
 		List<DailyAvailability> expectedAvailability = new LinkedList<DailyAvailability>();
 		expectedAvailability.add(new DailyAvailability(now.plusDays(1).toString(), 8));
@@ -88,7 +88,7 @@ public class DailyAvailabilityServiceTest {
 		days.add(new DailyOccupation(now.plusDays(20).toString(), 2));
 		days.add(new DailyOccupation(now.plusDays(21).toString(), 3));
 		days.add(new DailyOccupation(now.plusDays(25).toString(), 10));
-		when(dailyAvailabilityRepository.findAllByDateBetween(anyString(), anyString())).thenReturn(days);
+		when(dailyAvailabilityRepository.findAllByDateBetweenOrderByDateAsc(anyString(), anyString())).thenReturn(days);
 
 		List<DailyAvailability> expectedAvailability = new LinkedList<DailyAvailability>();
 		expectedAvailability.add(new DailyAvailability(now.plusDays(20).toString(), 8));
@@ -121,7 +121,7 @@ public class DailyAvailabilityServiceTest {
 		days.add(new DailyOccupation(now.plusDays(1).toString(), 2));
 		days.add(new DailyOccupation(now.plusDays(2).toString(), 10));
 		days.add(new DailyOccupation(now.plusDays(10).toString(), 7));
-		when(dailyAvailabilityRepository.findAllByDateBetween(anyString(), anyString())).thenReturn(days);
+		when(dailyAvailabilityRepository.findAllByDateBetweenOrderByDateAsc(anyString(), anyString())).thenReturn(days);
 
 		List<DailyAvailability> expectedAvailability = new LinkedList<DailyAvailability>();
 		expectedAvailability.add(new DailyAvailability(now.plusDays(1).toString(), 8));

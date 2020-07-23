@@ -5,7 +5,7 @@ import java.util.List;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
-import com.upgrade.challenge.model.DailyOccupation;
+import com.upgrade.challenge.model.dto.DailyOccupation;
 
 @Repository
 public interface DailyOccupationRepository extends CrudRepository<DailyOccupation, Integer>{

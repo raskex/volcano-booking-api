@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import javax.validation.ConstraintViolationException;
 
+import org.hibernate.dialect.lock.OptimisticEntityLockException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -27,32 +28,37 @@ public class VolcanoExceptionHandler extends ResponseEntityExceptionHandler {
 
 	@ExceptionHandler(NumberFormatException.class)
 	public ResponseEntity<?> handleNumberFormatException(NumberFormatException e) {
-		return ResponseEntity.badRequest().body(e.getMessage());
+		return ResponseEntity.badRequest().body("Errors: " + e.getMessage());
 	}
 	
 	@ExceptionHandler(AvailabilityException.class)
 	public ResponseEntity<?> handleAvailabilityException(AvailabilityException e) {
-		return ResponseEntity.badRequest().body(e.getMessage());
+		return ResponseEntity.badRequest().body("Errors: " + e.getMessage());
 	}
 	
 	@ExceptionHandler(BookingNotFoundException.class)
 	public ResponseEntity<?> handleBookingNotFoundException(BookingNotFoundException e) {
-		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Errors: " + e.getMessage());
 	}
 	
 	@ExceptionHandler(BookingException.class)
 	public ResponseEntity<?> handleBookingException(BookingException e) {
-		return ResponseEntity.badRequest().body(e.getMessage());
+		return ResponseEntity.badRequest().body("Errors: " + e.getMessage());
 	}
 
 	@ExceptionHandler(ConstraintViolationException.class)
 	public ResponseEntity<?> handleConstraintViolationException(ConstraintViolationException e) {
-		return ResponseEntity.badRequest().body("Errors: " + e.getMessage());
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Errors: " + e.getMessage());
 	}
 	
 	@ExceptionHandler(BatchUpdateException.class)
 	public ResponseEntity<?> handleBatchUpdateException(BatchUpdateException e) {
-		return ResponseEntity.badRequest().body("Errors: " + e.getMessage());
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Errors: " + e.getMessage());
+	}
+	
+	@ExceptionHandler(OptimisticEntityLockException.class)
+	public ResponseEntity<?> handleOptimisticEntityLockException(OptimisticEntityLockException e) {
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Errors: " + e.getMessage());
 	}
 	
 	@ExceptionHandler(InputFormatException.class)
@@ -62,22 +68,17 @@ public class VolcanoExceptionHandler extends ResponseEntityExceptionHandler {
 	
 	@ExceptionHandler(InvalidFormatException.class)
 	public ResponseEntity<?> handleInvalidFormatException(InvalidFormatException e) {
-		return ResponseEntity.badRequest().body(e.getMessage());
+		return ResponseEntity.badRequest().body("Errors: " + e.getMessage());
 	}
 	
 	@ExceptionHandler(EmptyResultDataAccessException.class)
 	public ResponseEntity<?> handleEmptyResultDataAccessException(EmptyResultDataAccessException e) {
-		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-	}
-	
-	@ExceptionHandler(Exception.class)
-	public ResponseEntity<?> handleException(Exception e) {
-		return ResponseEntity.badRequest().body(e.getMessage());
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Errors: " + e.getMessage());
 	}
 	
 	@ExceptionHandler(IllegalArgumentException.class)
 	public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException e) {
-		return ResponseEntity.badRequest().body(e.getMessage());
+		return ResponseEntity.badRequest().body("Errors: " + e.getMessage());
 	}
 	
 	@Override
@@ -85,7 +86,7 @@ public class VolcanoExceptionHandler extends ResponseEntityExceptionHandler {
 			HttpHeaders headers, HttpStatus status, WebRequest request) {
 		final String message = ex.getBindingResult().getAllErrors().stream().map(ObjectError::getDefaultMessage)
 				.collect(Collectors.joining(", "));
-		return ResponseEntity.badRequest().body(message);
+		return ResponseEntity.badRequest().body("Errors: " + message);
 	}
 	
 }

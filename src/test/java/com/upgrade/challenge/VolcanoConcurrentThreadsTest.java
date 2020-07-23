@@ -1,19 +1,26 @@
 package com.upgrade.challenge;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.net.URI;
 import java.time.LocalDate;
-import java.util.EmptyStackException;
-import java.util.Stack;
+import java.time.format.DateTimeFormatter;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.http.HttpEntity;
+import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -24,66 +31,88 @@ import com.upgrade.challenge.services.BookingServiceTest;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class VolcanoConcurrentThreadsTest {
 
-	private final int TOTAL_THREADS = 1000;
+	private static final Logger logger = LoggerFactory.getLogger(VolcanoConcurrentThreadsTest.class);
+
+	private final int TOTAL_THREADS = 100;
+	private final int OPERATIONS_PER_THREAD = 20;
 
 	private TestRestTemplate rest = new TestRestTemplate();
 	
 	private final String BASE_URL = "http://localhost:";
 	private final String BOOKING_ENDPOINT = "/booking/";
-	private final String AVAILABILITY_ENDPOINT = "/availability/alldates?from=%s&to=%s";
+	private final String AVAILABILITY_ENDPOINT = "/availability/?from=%s&to=%s";
 	private String urlBooking;
 	private String urlAvailability;
 	
 	private final LocalDate now = LocalDate.now();
+//	private final LocalDate now = LocalDate.parse(LocalDate.now().toString(), DateTimeFormatter.ISO_DATE);
 
 	@LocalServerPort
 	private int port;
 	
-	private Stack<String> bookings = new Stack<String>();
+	private ConcurrentLinkedQueue<Integer> bookingsQueue = new ConcurrentLinkedQueue<Integer>();
+	private ConcurrentLinkedQueue<String> errorMessages = new ConcurrentLinkedQueue<String>();
 	
 	/**
 	 * Test the normal behavior of the app.
 	 */
 	@Test
 	public void testVolcanoMultiThreadingAnyDatesWithin35Days() throws InterruptedException {
-		urlBooking = BASE_URL.concat(String.valueOf(port)).concat(BOOKING_ENDPOINT);
-		urlAvailability = BASE_URL.concat(String.valueOf(port)).concat(AVAILABILITY_ENDPOINT);
+		urlBooking = BASE_URL + port + BOOKING_ENDPOINT;
+		urlAvailability = BASE_URL + port + AVAILABILITY_ENDPOINT;
 
+		AtomicInteger createFailures = new AtomicInteger();
+		AtomicInteger editFailures = new AtomicInteger();
+		AtomicInteger cancelFailures = new AtomicInteger();
 		runMultithreaded(new Runnable() {
 			public void run() {
-				try {
-					int number = generateRandomNumber();
+				for (int i = 0; i < OPERATIONS_PER_THREAD; i++) {
+					try {
+						int number = generateRandomNumber();
 
-					// Create Booking
-					if (number < 7) {
-						System.out.println("-- CREATE --");
-						createBookingAnyDates();
-						System.out.println("-- END CREATE --");
-					
-					// Edit Booking	
-					} else if (number < 9) {
-						System.out.println("-- EDIT --");
-						editBooking();
-						System.out.println("-- END EDIT --");
+						// Create Booking
+						if (number < 6) {
+							logger.info("-- CREATE --");
+							if (!createBookingAnyDates()) {
+								createFailures.incrementAndGet();
+							}
+							logger.info("-- END CREATE --");
 						
-					// Cancel Booking	
-					} else {
-						System.out.println("-- CANCEL --");
-						cancelBooking();
-						System.out.println("-- END CANCEL --");
-					}
-					printBookingsStack();
-				} catch (Exception e) {
-					e.printStackTrace();
+						// Edit Booking	
+						} else if (number < 8) {
+							logger.info("-- EDIT --");
+							if (!editBooking()) {
+								editFailures.incrementAndGet();
+							}
+							logger.info("-- END EDIT --");
+							
+						// Cancel Booking	
+						} else {
+							logger.info("-- CANCEL --");
+							if (!cancelBooking()) {
+								cancelFailures.incrementAndGet();
+							}
+							logger.info("-- END CANCEL --");
+						}
+						printBookingsStack();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}				
 				}
+
 			}
 
 		}, TOTAL_THREADS);
 		
 		// Show Availability
-		System.out.println("-- GET --");
-		checkAvailability(1, 37);
-		System.out.println("-- END GET --");
+		logger.info("-- GET --");
+		checkAvailability(now.plusDays(1), now.plusDays(37));
+		logger.info("-- END GET --");
+
+		printErrorMessages();
+		assertEquals(0, createFailures.get());
+		assertEquals(0, editFailures.get());
+		assertEquals(0, cancelFailures.get());
 	}
 	
 	/**
@@ -91,45 +120,74 @@ public class VolcanoConcurrentThreadsTest {
 	 */
 	@Test
 	public void testVolcanoMultiThreadingFixedDates() throws InterruptedException {
-		urlBooking = BASE_URL.concat(String.valueOf(port)).concat(BOOKING_ENDPOINT);
-		urlAvailability = BASE_URL.concat(String.valueOf(port)).concat(AVAILABILITY_ENDPOINT);
+		urlBooking = BASE_URL + port + BOOKING_ENDPOINT;
+		urlAvailability = BASE_URL + port + AVAILABILITY_ENDPOINT;
 
+		AtomicInteger createFailures = new AtomicInteger();
+		AtomicInteger editFailures = new AtomicInteger();
+		AtomicInteger cancelFailures = new AtomicInteger();
 		runMultithreaded(new Runnable() {
 			public void run() {
-				try {
-					int number = generateRandomNumber();
-
-					// Create Booking
-					if (number < 4) {
-						System.out.println("-- CREATE --");
-						createBookingFixedDates();
-						System.out.println("-- END CREATE --");
-					
-					// Edit Booking	
-					} else if (number < 7) {
-						System.out.println("-- EDIT --");
-						editBooking();
-						System.out.println("-- END EDIT --");
+				for (int i = 0; i < OPERATIONS_PER_THREAD; i++) {
+					try {
+						int number = generateRandomNumber();
 						
-					// Cancel Booking	
-					} else {
-						System.out.println("-- CANCEL --");
-						cancelBooking();
-						System.out.println("-- END CANCEL --");
-					}
-					printBookingsStack();
-				} catch (Exception e) {
-					e.printStackTrace();
+						// Create Booking
+						if (number < 6) {
+							logger.info("-- CREATE --");
+							if (!createBookingFixedDates()) {
+								createFailures.incrementAndGet();
+							}
+							logger.info("-- END CREATE --");
+						
+						// Edit Booking	
+						} else if (number < 8) {
+							logger.info("-- EDIT --");
+							if (!editBooking()) {
+								editFailures.incrementAndGet();
+							}
+							logger.info("-- END EDIT --");
+							
+						// Cancel Booking	
+						} else {
+							logger.info("-- CANCEL --");
+							if (!cancelBooking()) {
+								cancelFailures.incrementAndGet();
+							}
+							logger.info("-- END CANCEL --");
+						}
+						printBookingsStack();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}				
 				}
+
 			}
 
 		}, TOTAL_THREADS);
 		
 		// Show Availability
-		System.out.println("-- GET --");
-		checkAvailability(1, 6);
-		System.out.println("-- END GET --");
+		logger.info("-- GET --");
+		checkAvailability(now.plusDays(1), now.plusDays(6));
+		logger.info("-- END GET --");
 
+		printErrorMessages();
+		assertEquals(0, createFailures.get());
+		assertEquals(0, editFailures.get());
+		assertEquals(0, cancelFailures.get());
+	}
+	
+	private void printErrorMessages() {
+		logger.info("**************** printing error messages ****************");
+		logger.info("**************** printing error messages ****************");
+		logger.info("**************** printing error messages ****************");
+		logger.info("**************** printing error messages ****************");
+		if (errorMessages.isEmpty()) {
+			logger.info("NO ERRORS");
+		}
+		for (String error : errorMessages) {
+			logger.info("error: " + error);
+		}
 	}
 	
 	private void runMultithreaded(Runnable runnable, int threadCount) throws InterruptedException {
@@ -143,59 +201,86 @@ public class VolcanoConcurrentThreadsTest {
 		}
 	}
 
-	private void createBookingAnyDates() {
-		createBooking(createBookingRequestRandomInfo());
+	private boolean createBookingAnyDates() throws JSONException {
+		return createBooking(createBookingRequestRandomInfo());
 	}
 	
-	private void createBookingFixedDates() {
-		createBooking(BookingServiceTest.createBookingRequest());
+	private boolean createBookingFixedDates() throws JSONException {
+		return createBooking(BookingServiceTest.createBookingRequest());
 	}
 	
-	private void createBooking(BookingRequest bookingRequest) {
-		HttpEntity<BookingRequest> bookingEntity = new HttpEntity<BookingRequest>(bookingRequest);
-		ResponseEntity<String> response = rest.postForEntity(urlBooking, bookingEntity, String.class);
+	private boolean createBooking(BookingRequest bookingRequest) throws JSONException {
+		ResponseEntity<String> response = rest.exchange(
+				RequestEntity.post(URI.create(urlBooking)).body(bookingRequest), String.class);
 		if (response.getStatusCode().is2xxSuccessful()) {
-			bookings.push(response.getBody());
-			System.out.println("Booking ID: " + response.getBody() + " created!");
+			JSONObject responseBody = new JSONObject(response.getBody());
+			bookingsQueue.add((Integer) responseBody.get("id"));
+			logger.info("Booking ID: " + responseBody.get("id") + " created!");
+			return true;
+		} else if (response.getStatusCode().is4xxClientError()) {
+			logger.info("Booking could not be created: " + response.getBody());
+			return true;
 		} else {
-			System.out.println("Booking not created: " + response.getBody());
+			logger.info("Booking not created: " + response.getBody());
+			errorMessages.add(response.getBody());
+			return false;
 		}
 	}
 	
-	private void editBooking() {
-		try {
-			String bookingId = bookings.pop();
-			BookingRequest bookingRequest = createBookingRequestRandomInfo();
-			bookingRequest.setFromDay(now.plusDays(3).toString());
-			bookingRequest.setToDay(now.plusDays(4).toString());
-			rest.put(urlBooking.concat(bookingId), bookingRequest, String.class);
-			System.out.println("Booking edited.");
-			bookings.push(bookingId);
-		} catch (EmptyStackException e) {
-			System.out.println("There are no bookings to edit in the stack.");
+	private boolean editBooking() {
+		Integer bookingId = bookingsQueue.poll();
+		if (bookingId == null) {
+			logger.info("There are no bookings to edit in the stack.");
+			return true;
+		}
+		BookingRequest bookingRequest = createBookingRequestRandomInfo();
+		bookingRequest.setFromDay(now.plusDays(2));
+		bookingRequest.setToDay(now.plusDays(4));
+		ResponseEntity<String> response = rest.exchange(
+				RequestEntity.put(URI.create(urlBooking + bookingId)).body(bookingRequest), String.class);
+		bookingsQueue.add(bookingId);
+		if (response.getStatusCode().is2xxSuccessful()) {
+			logger.info("Booking edited.");
+			return true;
+		} else if (response.getStatusCode().is4xxClientError()) {
+			logger.info("Booking could not be edited: " + response.getBody());
+			return true;
+		} else {
+			logger.info("Booking could not be edited: " + response.getBody());
+			errorMessages.add(response.getBody());
+			return false;
 		}
 	}
 
-	private void cancelBooking() {
-		try {
-			String bookingId = bookings.pop();
-			rest.delete(urlBooking.concat(bookingId));
-			System.out.println("Booking canceled.");
-		} catch (EmptyStackException e) {
-			System.out.println("There are no bookings to cancel in the stack.");
+	private boolean cancelBooking() {
+		Integer bookingId = bookingsQueue.poll();
+		if (bookingId == null) {
+			logger.info("There are no bookings to cancel in the stack.");
+			return true;
 		}
+		ResponseEntity<String> response = rest.exchange(
+				RequestEntity.delete(URI.create(urlBooking + bookingId)).build(), String.class);
+		if (response.getStatusCode().is2xxSuccessful()) {
+			logger.info("Booking canceled.");
+			return true;
+		} else if (response.getStatusCode().is4xxClientError()) {
+			logger.info("Booking could not be canceled: " + response.getBody());
+			return true;
+		}
+		logger.info("Booking could not be canceled: " + response.getBody());
+		errorMessages.add(response.getBody());
+
+		return false;
 	}
 
-	private void checkAvailability(int fromDay, int toDay) {
-		String from = now.plusDays(fromDay).toString();
-		String to = now.plusDays(toDay).toString();
-		ResponseEntity<String> response = rest.getForEntity(String.format(urlAvailability, from, to), String.class);
+	private void checkAvailability(LocalDate fromDay, LocalDate toDay) {
+		ResponseEntity<String> response = rest.getForEntity(String.format(urlAvailability, fromDay, toDay), String.class);
 		assertTrue(response.getStatusCode().is2xxSuccessful());
-		System.out.println(response.getBody());
+		logger.info(response.getBody());
 	}
 	private BookingRequest createBookingRequestRandomInfo() {
 		BookingRequest bookingRequest = new BookingRequest();
-		String[] dates = generateRandomDates();
+		LocalDate[] dates = generateRandomDates();
 		bookingRequest.setFromDay(dates[0]);
 		bookingRequest.setToDay(dates[1]);
 		bookingRequest.setGuests(generateRandomGuests());
@@ -209,18 +294,18 @@ public class VolcanoConcurrentThreadsTest {
 		return RandomStringUtils.random(15, true, true).concat("@mail.com");
 	}
 
-	private String generateRandomGuests() {
-		return String.valueOf(RandomUtils.nextInt(1, 5));
+	private Integer generateRandomGuests() {
+		return RandomUtils.nextInt(1, 5);
 	}
 
 	private String generateRandomString() {
 		return RandomStringUtils.random(8, true, false);
 	}
 
-	private String[] generateRandomDates() {
+	private LocalDate[] generateRandomDates() {
 		int dayFrom = RandomUtils.nextInt(1, 35);
 		int dayTo = RandomUtils.nextInt(1, 4) + dayFrom;
-		return new String[] {now.plusDays(dayFrom).toString(), now.plusDays(dayTo).toString()};
+		return new LocalDate[] {now.plusDays(dayFrom), now.plusDays(dayTo)};
 	}
 	
 	private int generateRandomNumber() {
@@ -228,7 +313,7 @@ public class VolcanoConcurrentThreadsTest {
 	}
 	
 	private void printBookingsStack() {
-		System.out.println("Bookings: " + bookings.toString());
+		logger.info("Booking: " + bookingsQueue.toString());
 	}
-
+	
 }

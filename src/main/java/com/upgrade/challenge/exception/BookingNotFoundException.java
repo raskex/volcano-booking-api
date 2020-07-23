@@ -4,13 +4,13 @@ public class BookingNotFoundException extends RuntimeException {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final String MESSAGE = "Booking not found for ID: %s";
+	private static final String MESSAGE = "Booking not found for ID: %d";
 
-	public BookingNotFoundException(String id, Throwable cause) {
+	public BookingNotFoundException(Integer id, Throwable cause) {
 		super(String.format(MESSAGE, id), cause);
 	}
 
-	public BookingNotFoundException(String id) {
+	public BookingNotFoundException(Integer id) {
 		super(String.format(MESSAGE, id));
 	}
 	

@@ -1,11 +1,9 @@
 package com.upgrade.challenge.controllers;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Min;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,12 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.upgrade.challenge.exception.AvailabilityException;
-import com.upgrade.challenge.exception.BookingException;
-import com.upgrade.challenge.exception.BookingNotFoundException;
-import com.upgrade.challenge.exception.InputFormatException;
-import com.upgrade.challenge.model.Booking;
 import com.upgrade.challenge.model.BookingRequest;
+import com.upgrade.challenge.model.BookingResponse;
 import com.upgrade.challenge.services.BookingService;
 
 @Validated
@@ -32,40 +26,30 @@ public class BookingController {
 	@Autowired
 	private BookingService bookingService;
 	
-	@GetMapping(path= "/{bookingId}", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Booking> get(@PathVariable(name= "bookingId", required = false) String bookingId)
-			throws BookingNotFoundException, InputFormatException {
+	@GetMapping(path = "/{bookingId}")
+	public BookingResponse get(
+			@PathVariable(name = "bookingId", required = true) @Min(value = 1, message = "bookingId should be a positive number") Integer bookingId) {
 
-		return new ResponseEntity<Booking>(bookingService.get(bookingId), HttpStatus.OK);
+		return bookingService.get(bookingId);
 	}
 
-	@PostMapping(path= "/", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
-	public ResponseEntity<String> book(@Valid @RequestBody BookingRequest booking)
-			throws BookingException, AvailabilityException, InputFormatException {
+	@PostMapping(path= "/")
+	public BookingResponse book(@Valid @RequestBody BookingRequest booking) {
 		
-		return new ResponseEntity<String>(String.valueOf(bookingService.add(booking)), HttpStatus.OK);
+		return bookingService.add(booking);
 	}
 
-	@DeleteMapping(path= "/{bookingId}", produces = MediaType.TEXT_PLAIN_VALUE)
-	public ResponseEntity<String> cancel(@PathVariable(name= "bookingId", required = false) String bookingId)
-			throws InputFormatException, BookingNotFoundException, AvailabilityException, BookingException {
+	@PutMapping(path= "/{bookingId}")
+	public BookingResponse edit(@PathVariable(name = "bookingId", required = true) @Min(value = 1, message = "bookingId should be a positive number") Integer bookingId,
+			@RequestBody BookingRequest booking) {
+
+		return bookingService.edit(bookingId, booking);
+	}
+
+	@DeleteMapping(path= "/{bookingId}")
+	public void cancel(@PathVariable(name= "bookingId", required = true) @Min(value = 1, message = "bookingId should be a positive number") Integer bookingId) {
 		
 		bookingService.delete(bookingId);
-		
-		return new ResponseEntity<String>(String.format("Booking ID: %s succesfully cancelled.", bookingId), HttpStatus.OK);
-	}
-
-	@PutMapping(path= "/{bookingId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
-	public ResponseEntity<String> edit(@PathVariable(name= "bookingId", required = false) String bookingId,
-			@RequestBody BookingRequest booking)
-					throws AvailabilityException, BookingException, InputFormatException, BookingNotFoundException {
-
-		if (bookingService.edit(bookingId, booking)) {
-			return new ResponseEntity<String>(String.format("Booking ID: %s succesfully modified.", bookingId), HttpStatus.OK);
-		}
-
-		return ResponseEntity.ok(
-				String.format("Booking ID: %s not modified. There were no differences against the stored booking.", bookingId));
 	}
 
 }

@@ -1,7 +1,7 @@
 package com.upgrade.challenge.controllers;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -24,8 +24,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.upgrade.challenge.exception.AvailabilityException;
 import com.upgrade.challenge.exception.BookingException;
 import com.upgrade.challenge.exception.BookingNotFoundException;
-import com.upgrade.challenge.model.Booking;
 import com.upgrade.challenge.model.BookingRequest;
+import com.upgrade.challenge.model.BookingResponse;
 import com.upgrade.challenge.services.BookingService;
 import com.upgrade.challenge.services.BookingServiceTest;
 
@@ -41,8 +41,8 @@ public class BookingControllerTest {
 
     @Test
     public void testGet() throws Exception {
-    	Booking booking = BookingServiceTest.createBooking(33);
-        when(bookingService.get(anyString())).thenReturn(booking);
+    	BookingResponse booking = new BookingResponse(33, BookingServiceTest.createBookingRequest());
+        when(bookingService.get(anyInt())).thenReturn(booking);
 
         mvc.perform(MockMvcRequestBuilders
         	      .get("/booking/{bookingId}", 33)
@@ -51,7 +51,7 @@ public class BookingControllerTest {
         	      .andExpect(status().isOk())
         	      .andExpect(jsonPath("$.id").value(33))
         	      .andExpect(jsonPath("$.fromDay").value(LocalDate.now().plusDays(2).toString()))
-        	      .andExpect(jsonPath("$.toDay").value(LocalDate.now().plusDays(4).toString()))
+        	      .andExpect(jsonPath("$.toDay").value(LocalDate.now().plusDays(3).toString()))
         	      .andExpect(jsonPath("$.firstName").value("name"))
         	      .andExpect(jsonPath("$.lastName").value("surname"))
         	      .andExpect(jsonPath("$.guests").value(3))
@@ -60,7 +60,7 @@ public class BookingControllerTest {
 
     @Test
     public void testGetNoAvailability() throws Exception {
-		doThrow(BookingNotFoundException.class).when(bookingService).get(anyString());
+		doThrow(BookingNotFoundException.class).when(bookingService).get(anyInt());
 
         mvc.perform(MockMvcRequestBuilders
         	      .get("/booking/{bookingId}", 33)
@@ -72,13 +72,12 @@ public class BookingControllerTest {
     @Test
     public void testBookOK() throws Exception {
     	BookingRequest bookingRequest = BookingServiceTest.createBookingRequest();
-        when(bookingService.add(any(BookingRequest.class))).thenReturn(33);
+        when(bookingService.add(any(BookingRequest.class))).thenReturn(new BookingResponse(33, bookingRequest));
 
         mvc.perform(MockMvcRequestBuilders
         		  .post("/booking/")
         	      .contentType(MediaType.APPLICATION_JSON)
-        	      .content(new ObjectMapper().writeValueAsString(bookingRequest))
-        	      .accept(MediaType.TEXT_PLAIN))
+        	      .content(new ObjectMapper().writeValueAsString(bookingRequest)))
         	      .andDo(print())
         	      .andExpect(status().isOk());
     }  
@@ -91,8 +90,7 @@ public class BookingControllerTest {
         mvc.perform(MockMvcRequestBuilders
         	      .post("/booking/")
         	      .contentType(MediaType.APPLICATION_JSON)
-        	      .content(new ObjectMapper().writeValueAsString(bookingRequest))
-        	      .accept(MediaType.TEXT_PLAIN))
+        	      .content(new ObjectMapper().writeValueAsString(bookingRequest)))
         	      .andDo(print())
         	      .andExpect(status().isBadRequest());
     }  
@@ -100,13 +98,13 @@ public class BookingControllerTest {
     @Test
     public void testEditBookingOk() throws Exception {
     	BookingRequest bookingRequest = BookingServiceTest.createBookingRequest();
-        when(bookingService.edit(anyString(), any(BookingRequest.class))).thenReturn(true);
+        when(bookingService.edit(anyInt(), any(BookingRequest.class))).thenReturn(BookingServiceTest.createBookingResponse(33));
         
         mvc.perform(MockMvcRequestBuilders
         	      .put("/booking/{bookingId}", 33)
         	      .contentType(MediaType.APPLICATION_JSON)
-        	      .content(new ObjectMapper().writeValueAsString(bookingRequest))
-        	      .accept(MediaType.TEXT_PLAIN))
+        	      
+        	      .content(new ObjectMapper().writeValueAsString(bookingRequest)))
         	      .andDo(print())
         	      .andExpect(status().isOk());
     }  
@@ -114,13 +112,12 @@ public class BookingControllerTest {
     @Test
     public void testEditBookingNoAvailability() throws Exception {
     	BookingRequest bookingRequest = BookingServiceTest.createBookingRequest();
-        when(bookingService.edit(anyString(), any(BookingRequest.class))).thenThrow(AvailabilityException.class);
+        when(bookingService.edit(anyInt(), any(BookingRequest.class))).thenThrow(AvailabilityException.class);
         
         mvc.perform(MockMvcRequestBuilders
         	      .put("/booking/{bookingId}", 33)
         	      .contentType(MediaType.APPLICATION_JSON)
-        	      .content(new ObjectMapper().writeValueAsString(bookingRequest))
-        	      .accept(MediaType.TEXT_PLAIN))
+        	      .content(new ObjectMapper().writeValueAsString(bookingRequest)))
         	      .andDo(print())
         	      .andExpect(status().isBadRequest());
     }  
@@ -128,30 +125,27 @@ public class BookingControllerTest {
     @Test
     public void testDeleteBookingOk() throws Exception {
         mvc.perform(MockMvcRequestBuilders
-        	      .delete("/booking/{bookingId}", 33)
-        	      .accept(MediaType.TEXT_PLAIN))
+        	      .delete("/booking/{bookingId}", 33))
         	      .andDo(print())
         	      .andExpect(status().isOk());
     }  
 
     @Test
     public void testDeleteBookingNotFound() throws Exception {
-		doThrow(BookingNotFoundException.class).when(bookingService).delete(anyString());
+		doThrow(BookingNotFoundException.class).when(bookingService).delete(anyInt());
 
 		mvc.perform(MockMvcRequestBuilders
-        	      .delete("/booking/{bookingId}", 33)
-        	      .accept(MediaType.TEXT_PLAIN))
+        	      .delete("/booking/{bookingId}", 33))
         	      .andDo(print())
         	      .andExpect(status().isNotFound());
     }  
 
     @Test
     public void testDeleteBookingAlreadyPassed() throws Exception {
-		doThrow(BookingException.class).when(bookingService).delete(anyString());
+		doThrow(BookingException.class).when(bookingService).delete(anyInt());
 
 		mvc.perform(MockMvcRequestBuilders
-        	      .delete("/booking/{bookingId}", 33)
-        	      .accept(MediaType.TEXT_PLAIN))
+        	      .delete("/booking/{bookingId}", 33))
         	      .andDo(print())
         	      .andExpect(status().isBadRequest());
     }

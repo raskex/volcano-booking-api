@@ -1,18 +1,17 @@
 package com.upgrade.challenge.services;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
 import org.junit.Test;
@@ -28,8 +27,9 @@ import com.upgrade.challenge.exception.AvailabilityException;
 import com.upgrade.challenge.exception.BookingException;
 import com.upgrade.challenge.exception.BookingNotFoundException;
 import com.upgrade.challenge.exception.InputFormatException;
-import com.upgrade.challenge.model.Booking;
 import com.upgrade.challenge.model.BookingRequest;
+import com.upgrade.challenge.model.BookingResponse;
+import com.upgrade.challenge.model.dto.Booking;
 import com.upgrade.challenge.repository.BookingRepository;
 import com.upgrade.challenge.validator.BookingValidator;
 
@@ -39,19 +39,12 @@ public class BookingServiceTest {
 
 	@TestConfiguration
     static class BookingServiceTestContextConfiguration {
- 
         @Bean
         public BookingService bookingService() {
             return new BookingService();
         }
-
-        @Bean
-        public BookingValidator bookingValidator() {
-        	return new BookingValidator();
-        }
     }
- 
-	private static LocalDate now = LocalDate.now();
+	private static LocalDate now = LocalDate.parse(LocalDate.now().toString(), DateTimeFormatter.ISO_DATE);
 	
     @Autowired
     private BookingService bookingService;
@@ -62,50 +55,48 @@ public class BookingServiceTest {
 	@MockBean
 	private BookingRepository bookingRepository;
  
+	@MockBean
+    public BookingValidator validator;
+
     @Test
     public void testGetOK() throws BookingNotFoundException, InputFormatException {
-    	Booking booking = new Booking();
+    	Booking booking = createBooking(33);
     	Optional<Booking> optionalBooking = Optional.of(booking);
     	when(bookingRepository.findById(anyInt())).thenReturn(optionalBooking);
     	
-    	Booking currentBooking = bookingService.get("45");
+    	BookingResponse currentBooking = bookingService.get(33);
 
-		assertEquals(booking, currentBooking);
+		assertEquals(booking.getId(), currentBooking.getId());
     }
 
     @Test(expected = BookingNotFoundException.class)
-    public void testGetNotOK() throws BookingNotFoundException, InputFormatException {
+    public void testGetNotFound() throws BookingNotFoundException, InputFormatException {
     	Optional<Booking> optionalBooking = Optional.empty();
     	when(bookingRepository.findById(anyInt())).thenReturn(optionalBooking);
     	
-    	bookingService.get("45");
-    }
-
-    @Test(expected = InputFormatException.class)
-    public void testGetNumberException() throws BookingNotFoundException, InputFormatException {
-    	bookingService.get("4f5");
+    	bookingService.get(33);
     }
 
     @Test
     public void testAddOK() throws BookingException, AvailabilityException, InputFormatException {
-    	Booking booking = new Booking();
-    	booking.setId(33);
-    	when(bookingRepository.save(any(Booking.class))).thenReturn(booking);
+    	Booking expectedBooking = new Booking();
+    	expectedBooking.setId(33);
+    	when(bookingRepository.save(any(Booking.class))).thenReturn(expectedBooking);
     	BookingRequest bookingRequest = createBookingRequest();
     	
-    	Integer bookingId = bookingService.add(bookingRequest);
+    	BookingResponse createdBooking = bookingService.add(bookingRequest);
 
-		assertEquals(booking.getId(), bookingId);
+		assertEquals(expectedBooking.getId(), createdBooking.getId());
 		verify(bookingRepository, times(1)).save(any(Booking.class));
-		verify(dailyAvailabilityService, times(1)).validateAvailability(anyString(), anyString(), anyString(), anyBoolean());
-		verify(dailyAvailabilityService, times(1)).blockAvailability(anyString(), anyString(), anyInt());
+		verify(dailyAvailabilityService, times(1)).validateAvailability(any(LocalDate.class), any(LocalDate.class), anyInt(), anyBoolean());
+		verify(dailyAvailabilityService, times(1)).blockAvailability(any(LocalDate.class), any(LocalDate.class), anyInt());
     }
     
     @Test(expected = AvailabilityException.class)
     public void testAddNoAvailability() throws BookingException, AvailabilityException, InputFormatException {
-		doThrow(AvailabilityException.class).when(dailyAvailabilityService).validateAvailability(anyString(),
-				anyString(), anyString(), anyBoolean());
-    	        
+		doThrow(AvailabilityException.class).when(dailyAvailabilityService).validateAvailability(any(LocalDate.class),
+				any(LocalDate.class), anyInt(), anyBoolean());
+
     	bookingService.add(createBookingRequest());
     }
     
@@ -115,10 +106,11 @@ public class BookingServiceTest {
     	Optional<Booking> optionalBooking = Optional.of(booking);
     	when(bookingRepository.findById(anyInt())).thenReturn(optionalBooking);
     	
-    	bookingService.delete("33");
+    	bookingService.delete(33);
 
+		verify(validator, times(1)).validatePastDate(any(LocalDate.class), anyString());
 		verify(bookingRepository, times(1)).deleteById(33);
-		verify(dailyAvailabilityService, times(1)).releaseAvailability(anyString(), anyString(), anyInt());
+		verify(dailyAvailabilityService, times(1)).releaseAvailability(any(LocalDate.class), any(LocalDate.class), anyInt());
 		verify(bookingRepository, times(1)).findById(anyInt());
     }
     
@@ -127,18 +119,18 @@ public class BookingServiceTest {
     	Optional<Booking> optionalBooking = Optional.empty();
     	when(bookingRepository.findById(anyInt())).thenReturn(optionalBooking);
     	
-    	bookingService.delete("33");
+    	bookingService.delete(33);
 		verify(bookingRepository, times(1)).findById(33);
     }
 
     @Test(expected = BookingException.class)
     public void testDeletePastBooking() throws InputFormatException, BookingNotFoundException, AvailabilityException, BookingException {
-    	Booking booking = createBooking(33);
-    	booking.setFromDay(now.minusDays(2).toString());
-    	Optional<Booking> optionalBooking = Optional.of(booking);
+    	Optional<Booking> optionalBooking = Optional.of(createBooking(33));
     	when(bookingRepository.findById(anyInt())).thenReturn(optionalBooking);
+    	doThrow(BookingException.class).when(validator).validatePastDate(any(LocalDate.class), anyString());
     	
-    	bookingService.delete("33");
+    	bookingService.delete(33);
+
 		verify(bookingRepository, times(1)).findById(33);
     }
 
@@ -149,12 +141,15 @@ public class BookingServiceTest {
     	when(bookingRepository.findById(anyInt())).thenReturn(optionalBooking);
     	BookingRequest bookingRequest = createBookingRequest();
     	bookingRequest.setEmail("another@email.com");
+    	BookingResponse expectedBooking = new BookingResponse(33, bookingRequest);
 
-    	boolean edited = bookingService.edit("33", bookingRequest);
+    	BookingResponse editedBooking = bookingService.edit(33, bookingRequest);
 
-    	assertTrue(edited);
+    	assertEquals(expectedBooking.getId(), editedBooking.getId());
 		verify(bookingRepository, times(1)).findById(33);
-		verify(dailyAvailabilityService, times(1)).releaseAvailability(anyString(), anyString(), anyInt());
+		verify(validator, times(1)).validatePastDate(any(LocalDate.class), anyString());
+		verify(validator, times(1)).validateDateInput(any(LocalDate.class), any(LocalDate.class), anyBoolean());
+		verify(dailyAvailabilityService, times(1)).releaseAvailability(any(LocalDate.class), any(LocalDate.class), anyInt());
 		verify(bookingRepository, times(1)).save(any(Booking.class));
     }
     
@@ -164,15 +159,18 @@ public class BookingServiceTest {
     	Optional<Booking> optionalBooking = Optional.of(booking);
     	when(bookingRepository.findById(anyInt())).thenReturn(optionalBooking);
     	BookingRequest bookingRequest = createBookingRequest();
-    	bookingRequest.setFromDay(now.plusDays(2).toString());
-    	bookingRequest.setToDay(now.plusDays(3).toString());
+    	bookingRequest.setFromDay(now.plusDays(2));
+    	bookingRequest.setToDay(now.plusDays(3));
     	bookingRequest.setEmail("another@email.com");
+    	BookingResponse expectedBooking = new BookingResponse(33, bookingRequest);
 
-    	boolean edited = bookingService.edit("33", bookingRequest);
+    	BookingResponse editedBooking = bookingService.edit(33, bookingRequest);
 
-    	assertTrue(edited);
+    	assertEquals(expectedBooking.getId(), editedBooking.getId());
 		verify(bookingRepository, times(1)).findById(33);
-		verify(dailyAvailabilityService, times(1)).releaseAvailability(anyString(), anyString(), anyInt());
+		verify(validator, times(1)).validatePastDate(any(LocalDate.class), anyString());
+		verify(validator, times(1)).validateDateInput(any(LocalDate.class), any(LocalDate.class), anyBoolean());
+		verify(dailyAvailabilityService, times(1)).releaseAvailability(any(LocalDate.class), any(LocalDate.class), anyInt());
 		verify(bookingRepository, times(1)).save(any(Booking.class));
     }
     
@@ -182,15 +180,18 @@ public class BookingServiceTest {
     	Optional<Booking> optionalBooking = Optional.of(booking);
     	when(bookingRepository.findById(anyInt())).thenReturn(optionalBooking);
     	BookingRequest bookingRequest = createBookingRequest();
-    	bookingRequest.setFromDay(now.plusDays(3).toString());
-    	bookingRequest.setToDay(now.plusDays(4).toString());
+    	bookingRequest.setFromDay(now.plusDays(3));
+    	bookingRequest.setToDay(now.plusDays(4));
     	bookingRequest.setEmail("another@email.com");
+    	BookingResponse expectedBooking = new BookingResponse(33, bookingRequest);
 
-    	boolean edited = bookingService.edit("33", bookingRequest);
+    	BookingResponse editedBooking = bookingService.edit(33, bookingRequest);
 
-    	assertTrue(edited);
+    	assertEquals(expectedBooking.getId(), editedBooking.getId());
 		verify(bookingRepository, times(1)).findById(33);
-		verify(dailyAvailabilityService, times(1)).releaseAvailability(anyString(), anyString(), anyInt());
+		verify(validator, times(1)).validatePastDate(any(LocalDate.class), anyString());
+		verify(validator, times(1)).validateDateInput(any(LocalDate.class), any(LocalDate.class), anyBoolean());
+		verify(dailyAvailabilityService, times(1)).releaseAvailability(any(LocalDate.class), any(LocalDate.class), anyInt());
 		verify(bookingRepository, times(1)).save(any(Booking.class));
     }
     
@@ -202,14 +203,17 @@ public class BookingServiceTest {
     	when(bookingRepository.findById(anyInt())).thenReturn(optionalBooking);
     	when(bookingRepository.save(any(Booking.class))).thenReturn(booking);
     	BookingRequest bookingRequest = createBookingRequest();
-    	bookingRequest.setFromDay(now.plusDays(1).toString());
-    	bookingRequest.setToDay(now.plusDays(4).toString());
+    	bookingRequest.setFromDay(now.plusDays(1));
+    	bookingRequest.setToDay(now.plusDays(4));
+    	BookingResponse expectedBooking = new BookingResponse(33, bookingRequest);
 
-    	boolean edited = bookingService.edit("33", bookingRequest);
+    	BookingResponse editedBooking = bookingService.edit(33, bookingRequest);
 
-    	assertTrue(edited);
+    	assertEquals(expectedBooking.getId(), editedBooking.getId());
 		verify(bookingRepository, times(1)).findById(33);
-		verify(dailyAvailabilityService, times(1)).releaseAvailability(anyString(), anyString(), anyInt());
+		verify(validator, times(1)).validatePastDate(any(LocalDate.class), anyString());
+		verify(validator, times(1)).validateDateInput(any(LocalDate.class), any(LocalDate.class), anyBoolean());
+		verify(dailyAvailabilityService, times(1)).releaseAvailability(any(LocalDate.class), any(LocalDate.class), anyInt());
 		verify(bookingRepository, times(1)).save(any(Booking.class));
     }
     
@@ -219,42 +223,23 @@ public class BookingServiceTest {
     	Optional<Booking> optionalBooking = Optional.of(booking);
     	when(bookingRepository.findById(anyInt())).thenReturn(optionalBooking);
     	BookingRequest bookingRequest = createBookingRequest();
-    	bookingRequest.setToDay(now.plusDays(4).toString());
+    	bookingRequest.setToDay(now.plusDays(4));
     	bookingRequest.setEmail("another@email.com");
+    	BookingResponse expectedBooking = new BookingResponse(33, bookingRequest);
 
-    	boolean edited = bookingService.edit("33", bookingRequest);
+    	BookingResponse editedBooking = bookingService.edit(33, bookingRequest);
 
-    	assertTrue(edited);
+    	assertEquals(expectedBooking.getId(), editedBooking.getId());
 		verify(bookingRepository, times(1)).findById(33);
-		verify(dailyAvailabilityService, times(0)).releaseAvailability(anyString(), anyString(), anyInt());
+		verify(validator, times(1)).validatePastDate(any(LocalDate.class), anyString());
+		verify(validator, times(1)).validateDateInput(any(LocalDate.class), any(LocalDate.class), anyBoolean());
+		verify(dailyAvailabilityService, times(0)).releaseAvailability(any(LocalDate.class), any(LocalDate.class), anyInt());
 		verify(bookingRepository, times(1)).save(any(Booking.class));
     }
     
-    @Test
-    public void testEditBookingNoChangesWithoutCheckingAvailability() throws AvailabilityException, InputFormatException, BookingNotFoundException, BookingException {
-    	Booking booking = createBooking(33);
-    	Optional<Booking> optionalBooking = Optional.of(booking);
-    	when(bookingRepository.findById(anyInt())).thenReturn(optionalBooking);
-    	BookingRequest bookingRequest = createBookingRequest();
-    	bookingRequest.setToDay(now.plusDays(4).toString());
-
-    	boolean edited = bookingService.edit("33", bookingRequest);
-
-    	assertFalse(edited);
-		verify(bookingRepository, times(1)).findById(33);
-		verify(dailyAvailabilityService, times(0)).releaseAvailability(anyString(), anyString(), anyInt());
-		verify(bookingRepository, times(0)).save(any(Booking.class));
-    }
-    
     public static Booking createBooking(int id) {
-    	Booking booking = new Booking();
-    	booking.setId(id);
-    	booking.setEmail("some@email.com");
-    	booking.setFirstName("name");
-    	booking.setLastName("surname");
-    	booking.setFromDay(now.plusDays(2).toString());
+    	Booking booking = new Booking(createBookingResponse(id));
     	booking.setToDay(now.plusDays(4).toString());
-    	booking.setGuests(3);
     	return booking;
     }
 
@@ -263,10 +248,14 @@ public class BookingServiceTest {
     	bookingRequest.setEmail("some@email.com");
     	bookingRequest.setFirstName("name");
     	bookingRequest.setLastName("surname");
-    	bookingRequest.setFromDay(now.plusDays(2).toString());
-    	bookingRequest.setToDay(now.plusDays(3).toString());
-    	bookingRequest.setGuests("3");
+    	bookingRequest.setFromDay(now.plusDays(2));
+    	bookingRequest.setToDay(now.plusDays(3));
+    	bookingRequest.setGuests(3);
     	return bookingRequest;
+    }
+
+    public static BookingResponse createBookingResponse(int id) {
+    	return new BookingResponse(id, createBookingRequest());
     }
 
 }

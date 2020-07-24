@@ -1,6 +1,4 @@
-package com.upgrade.challenge.model;
-
-import java.io.Serializable;
+package com.upgrade.challenge.model.dto;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -17,9 +15,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-public class DailyOccupation implements Serializable {
-
-	private static final long serialVersionUID = 8719778416877659361L;
+public class DailyOccupation {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)

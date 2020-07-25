@@ -58,6 +58,16 @@
 
 > Remove the given bookingId if exists.
 
+
+### Setup MySQL DB
+
+* Create user: ** CREATE USER 'volcano'@'%' IDENTIFIED BY 'upgrade'; **
+
+* Give privileges: ** GRANT ALL PRIVILEGES ON db_volcano.* TO volcano; **
+
+* Check given privileges: ** SHOW GRANTS FOR volcano; **
+
+
 ### Run the application:
 
 mvn spring-boot:run

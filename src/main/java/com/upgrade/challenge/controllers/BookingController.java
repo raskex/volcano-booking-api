@@ -28,7 +28,7 @@ public class BookingController {
 	
 	@GetMapping(path = "/{bookingId}")
 	public BookingResponse get(
-			@PathVariable(name = "bookingId", required = true) @Min(value = 1, message = "bookingId should be a positive number") Integer bookingId) {
+			@PathVariable(name = "bookingId", required = true) @Min(value = 1, message = "bookingId should be a positive number") Long bookingId) {
 
 		return bookingService.get(bookingId);
 	}
@@ -40,14 +40,14 @@ public class BookingController {
 	}
 
 	@PutMapping(path= "/{bookingId}")
-	public BookingResponse edit(@PathVariable(name = "bookingId", required = true) @Min(value = 1, message = "bookingId should be a positive number") Integer bookingId,
-			@RequestBody BookingRequest booking) {
+	public BookingResponse edit(@PathVariable(name = "bookingId", required = true) @Min(value = 1, message = "bookingId should be a positive number") Long bookingId,
+			@Valid @RequestBody BookingRequest booking) {
 
 		return bookingService.edit(bookingId, booking);
 	}
 
 	@DeleteMapping(path= "/{bookingId}")
-	public void cancel(@PathVariable(name= "bookingId", required = true) @Min(value = 1, message = "bookingId should be a positive number") Integer bookingId) {
+	public void cancel(@PathVariable(name= "bookingId", required = true) @Min(value = 1, message = "bookingId should be a positive number") Long bookingId) {
 		
 		bookingService.delete(bookingId);
 	}

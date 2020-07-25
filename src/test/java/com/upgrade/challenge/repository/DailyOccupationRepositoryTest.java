@@ -5,6 +5,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.Before;
@@ -29,10 +30,10 @@ public class DailyOccupationRepositoryTest {
 	
 	@Before
 	public void setup() {
-		DailyOccupation dailyAvailability1 = new DailyOccupation("2020-09-01", 1);
-		DailyOccupation dailyAvailability2 = new DailyOccupation("2020-09-02", 2);
-		DailyOccupation dailyAvailability3 = new DailyOccupation("2020-09-03", 3);
-		DailyOccupation dailyAvailability4 = new DailyOccupation("2020-09-04", 4);
+		DailyOccupation dailyAvailability1 = new DailyOccupation(LocalDate.parse("2020-09-01"), 1);
+		DailyOccupation dailyAvailability2 = new DailyOccupation(LocalDate.parse("2020-09-02"), 2);
+		DailyOccupation dailyAvailability3 = new DailyOccupation(LocalDate.parse("2020-09-03"), 3);
+		DailyOccupation dailyAvailability4 = new DailyOccupation(LocalDate.parse("2020-09-04"), 4);
 		entityManager.persist(dailyAvailability1);
 		entityManager.persist(dailyAvailability2);
 		entityManager.persist(dailyAvailability3);
@@ -41,20 +42,21 @@ public class DailyOccupationRepositoryTest {
 	}
 	@Test
 	public void testWhenFindAllByDateBetween() {
-		List<DailyOccupation> dayAvailabilitiesFound = dailyAvailabilityRepository.findAllByDateBetween("2020-09-02", "2020-09-03");
+		List<DailyOccupation> dayAvailabilitiesFound = dailyAvailabilityRepository
+				.findAllByDateBetween(LocalDate.parse("2020-09-02"), LocalDate.parse("2020-09-03"));
 
 		assertNotNull(dayAvailabilitiesFound);
 		assertEquals(2, dayAvailabilitiesFound.size());
-		assertEquals(dayAvailabilitiesFound.get(0).getDate(), "2020-09-02");
+		assertEquals(dayAvailabilitiesFound.get(0).getDate(), LocalDate.parse("2020-09-02"));
 		assertEquals(dayAvailabilitiesFound.get(0).getGuests(), 2);
-		assertEquals(dayAvailabilitiesFound.get(1).getDate(), "2020-09-03");
+		assertEquals(dayAvailabilitiesFound.get(1).getDate(), LocalDate.parse("2020-09-03"));
 		assertEquals(dayAvailabilitiesFound.get(1).getGuests(), 3);
 	}
 	
 	@Test
 	public void testExistsByDateBetweenAndGuestsGreaterThanFound() {
 		boolean dayAvailabilitiesFound = dailyAvailabilityRepository
-				.existsByDateBetweenAndGuestsGreaterThan("2020-09-01", "2020-09-04", 3);
+				.existsByDateBetweenAndGuestsGreaterThan(LocalDate.parse("2020-09-01"), LocalDate.parse("2020-09-04"), 3);
 
 		assertTrue(dayAvailabilitiesFound);
 	}
@@ -62,7 +64,7 @@ public class DailyOccupationRepositoryTest {
 	@Test
 	public void testExistsByDateBetweenAndGuestsGreaterThanNotFound() {
 		boolean dayAvailabilitiesFound = dailyAvailabilityRepository
-				.existsByDateBetweenAndGuestsGreaterThan("2020-09-01", "2020-09-04", 5);
+				.existsByDateBetweenAndGuestsGreaterThan(LocalDate.parse("2020-09-01"), LocalDate.parse("2020-09-04"), 5);
 
 		assertFalse(dayAvailabilitiesFound);
 	}

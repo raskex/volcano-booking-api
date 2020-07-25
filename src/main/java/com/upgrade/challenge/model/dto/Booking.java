@@ -1,5 +1,7 @@
 package com.upgrade.challenge.model.dto;
 
+import java.time.LocalDate;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -19,13 +21,13 @@ public class Booking {
 	
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
-	private Integer id;
+	private Long id;
 	
 	@Column
-	private String fromDay;
+	private LocalDate fromDay;
 	
 	@Column
-	private String toDay;
+	private LocalDate toDay;
 	
 	@Column
 	private Integer guests;
@@ -42,8 +44,8 @@ public class Booking {
 	public Booking() {}
 
 	public Booking(BookingRequest bookingRequest) {
-		this.fromDay = bookingRequest.getFromDay().toString();
-		this.toDay = bookingRequest.getToDay().toString();
+		this.fromDay = bookingRequest.getFromDay();
+		this.toDay = bookingRequest.getToDay();
 		this.guests = bookingRequest.getGuests();
 		this.firstName = bookingRequest.getFirstName();
 		this.lastName = bookingRequest.getLastName();
@@ -52,8 +54,8 @@ public class Booking {
 
 	public Booking(BookingResponse bookingResponse) {
 		this.id = bookingResponse.getId();
-		this.fromDay = bookingResponse.getFromDay().toString();
-		this.toDay = bookingResponse.getToDay().toString();
+		this.fromDay = bookingResponse.getFromDay();
+		this.toDay = bookingResponse.getToDay();
 		this.guests = bookingResponse.getGuests();
 		this.firstName = bookingResponse.getFirstName();
 		this.lastName = bookingResponse.getLastName();

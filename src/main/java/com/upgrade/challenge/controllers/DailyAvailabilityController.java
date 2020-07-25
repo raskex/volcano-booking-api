@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.upgrade.challenge.model.DailyAvailability;
 import com.upgrade.challenge.services.DailyAvailabilityService;
 
-
 @Validated
 @RestController
 @RequestMapping(path="/availability")

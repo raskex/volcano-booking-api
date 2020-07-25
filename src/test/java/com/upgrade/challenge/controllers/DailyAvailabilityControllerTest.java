@@ -8,7 +8,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -38,7 +37,7 @@ public class DailyAvailabilityControllerTest {
     @Test
     public void testGetAllDatesNoInputDates() throws Exception {
         List<DailyAvailability> availabilities = new LinkedList<DailyAvailability>();
-        availabilities.add(new DailyAvailability(LocalDate.parse("2020-09-09", DateTimeFormatter.ISO_DATE), 3));
+        availabilities.add(new DailyAvailability(LocalDate.parse("2020-09-09"), 3));
         
         when(dailyAvailabilityService.getAvailability(null, null)).thenReturn(availabilities);
 
@@ -52,9 +51,9 @@ public class DailyAvailabilityControllerTest {
     }  
 
     @Test
-    public void testGetAllDatesAllDates() throws Exception {
+    public void testGetAllDatesAllInputs() throws Exception {
         List<DailyAvailability> availabilities = new LinkedList<DailyAvailability>();
-        availabilities.add(new DailyAvailability(LocalDate.parse("2020-09-09", DateTimeFormatter.ISO_DATE), 3));
+        availabilities.add(new DailyAvailability(LocalDate.parse("2020-09-09"), 3));
         
         when(dailyAvailabilityService.getAvailability(any(LocalDate.class), any(LocalDate.class))).thenReturn(availabilities);
 
@@ -62,6 +61,40 @@ public class DailyAvailabilityControllerTest {
         	      .get("/availability/")
         	      .param("from", "2020-09-09")
         	      .param("to", "2020-09-10")
+        	      .accept(MediaType.APPLICATION_JSON))
+        	      .andDo(print())
+        	      .andExpect(status().isOk())
+        	      .andExpect(jsonPath("$", hasSize(1)))
+        		  .andExpect(jsonPath("$[?(@.date === '2020-09-09')]").exists());
+    }  
+
+    @Test
+    public void testGetAllDatesOnlyFromInput() throws Exception {
+        List<DailyAvailability> availabilities = new LinkedList<DailyAvailability>();
+        availabilities.add(new DailyAvailability(LocalDate.parse("2020-09-09"), 3));
+        
+        when(dailyAvailabilityService.getAvailability(any(LocalDate.class), any())).thenReturn(availabilities);
+
+        mvc.perform(MockMvcRequestBuilders
+        	      .get("/availability/")
+        	      .param("from", "2020-09-09")
+        	      .accept(MediaType.APPLICATION_JSON))
+        	      .andDo(print())
+        	      .andExpect(status().isOk())
+        	      .andExpect(jsonPath("$", hasSize(1)))
+        		  .andExpect(jsonPath("$[?(@.date === '2020-09-09')]").exists());
+    }  
+
+    @Test
+    public void testGetAllDatesOnlyToInput() throws Exception {
+        List<DailyAvailability> availabilities = new LinkedList<DailyAvailability>();
+        availabilities.add(new DailyAvailability(LocalDate.parse("2020-09-09"), 3));
+        
+        when(dailyAvailabilityService.getAvailability(any(), any(LocalDate.class))).thenReturn(availabilities);
+
+        mvc.perform(MockMvcRequestBuilders
+        	      .get("/availability/")
+        	      .param("to", "2020-09-09")
         	      .accept(MediaType.APPLICATION_JSON))
         	      .andDo(print())
         	      .andExpect(status().isOk())

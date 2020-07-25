@@ -1,8 +1,6 @@
 package com.upgrade.challenge.services;
 
 import java.sql.BatchUpdateException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 
 import javax.transaction.Transactional;
 
@@ -13,10 +11,7 @@ import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
-import com.upgrade.challenge.exception.AvailabilityException;
-import com.upgrade.challenge.exception.BookingException;
 import com.upgrade.challenge.exception.BookingNotFoundException;
-import com.upgrade.challenge.exception.InputFormatException;
 import com.upgrade.challenge.model.BookingRequest;
 import com.upgrade.challenge.model.BookingResponse;
 import com.upgrade.challenge.model.dto.Booking;
@@ -41,33 +36,36 @@ public class BookingService {
 	private String CANCEL = "cancel";
 	private String EDIT = "edit";
 
-	public BookingResponse get(Integer bookingId) throws BookingNotFoundException, InputFormatException {
-		Booking booking = bookingRepository.findById(Integer.valueOf(bookingId))
+	public BookingResponse get(Long bookingId) {
+		Booking booking = bookingRepository.findById(bookingId)
 				.orElseThrow(() -> new BookingNotFoundException(bookingId));
-		return new BookingResponse(booking.getId(), LocalDate.parse(booking.getFromDay(), DateTimeFormatter.ISO_DATE),
-				LocalDate.parse(booking.getToDay(), DateTimeFormatter.ISO_DATE), booking.getGuests(), booking.getFirstName(),
-				booking.getLastName(), booking.getEmail());
+		return new BookingResponse(booking.getId(), booking.getFromDay(), booking.getToDay(),
+				booking.getGuests(), booking.getFirstName(), booking.getLastName(), booking.getEmail());
 	}
 
 	@Transactional
-	@Retryable(value = {BatchUpdateException.class, DataIntegrityViolationException.class, ObjectOptimisticLockingFailureException.class}, maxAttempts = MAX_ATTEMPTS)
-	public BookingResponse add(BookingRequest bookingRequest) throws BookingException, AvailabilityException, InputFormatException {
-		dailyAvailabilityService.validateAvailability(bookingRequest.getFromDay(), bookingRequest.getToDay(), bookingRequest.getGuests(), true);
-		dailyAvailabilityService.blockAvailability(bookingRequest.getFromDay(), bookingRequest.getToDay(), Integer.valueOf(bookingRequest.getGuests()));
+	@Retryable(value = { BatchUpdateException.class, DataIntegrityViolationException.class,
+			ObjectOptimisticLockingFailureException.class }, maxAttempts = MAX_ATTEMPTS)
+	public BookingResponse add(BookingRequest bookingRequest) {
+		dailyAvailabilityService.validateAvailability(bookingRequest.getFromDay(), bookingRequest.getToDay(),
+				bookingRequest.getGuests(), true);
+		dailyAvailabilityService.blockAvailability(bookingRequest.getFromDay(), bookingRequest.getToDay(),
+				bookingRequest.getGuests());
 		return new BookingResponse(bookingRepository.save(new Booking(bookingRequest)).getId(), bookingRequest);
 	}
 
 	@Transactional
-	@Retryable(value = {BatchUpdateException.class, DataIntegrityViolationException.class, ObjectOptimisticLockingFailureException.class}, maxAttempts = MAX_ATTEMPTS)
-	public BookingResponse edit(Integer bookingId, BookingRequest bookingRequest) throws AvailabilityException, BookingException, InputFormatException, BookingNotFoundException {
+	@Retryable(value = { BatchUpdateException.class, DataIntegrityViolationException.class,
+			ObjectOptimisticLockingFailureException.class }, maxAttempts = MAX_ATTEMPTS)
+	public BookingResponse edit(Long bookingId, BookingRequest bookingRequest) {
 		BookingResponse storedBooking = get(bookingId);
 		validator.validatePastDate(storedBooking.getFromDay(), EDIT);
-		validator.validateDateInput(bookingRequest.getFromDay(), bookingRequest.getToDay(), true);
+		validator.validateDatesInput(bookingRequest.getFromDay(), bookingRequest.getToDay(), true);
 		BookingResponse editedBooking = new BookingResponse(bookingId, bookingRequest);
-		
-		Integer storedGuests =  storedBooking.getGuests();
+
+		Integer storedGuests = storedBooking.getGuests();
 		Integer editedGuests = editedBooking.getGuests();
-		if (editedBooking.getFromDay().compareTo(storedBooking.getFromDay()) < 0 
+		if (editedBooking.getFromDay().compareTo(storedBooking.getFromDay()) < 0
 				|| editedBooking.getToDay().compareTo(storedBooking.getToDay()) > 0 || editedGuests > storedGuests) {
 			dailyAvailabilityService.releaseAvailability(storedBooking.getFromDay(), storedBooking.getToDay(), storedBooking.getGuests());
 			return update(editedBooking);
@@ -90,31 +88,20 @@ public class BookingService {
 	}
 	
 	@Transactional
-	@Retryable(value = {BatchUpdateException.class, DataIntegrityViolationException.class, ObjectOptimisticLockingFailureException.class}, maxAttempts = MAX_ATTEMPTS)
-	public void delete(Integer bookingId) {
+	@Retryable(value = { BatchUpdateException.class, DataIntegrityViolationException.class,
+			ObjectOptimisticLockingFailureException.class }, maxAttempts = MAX_ATTEMPTS)
+	public void delete(Long bookingId) {
 		BookingResponse booking = get(bookingId);
 		validator.validatePastDate(booking.getFromDay(), CANCEL);
 		dailyAvailabilityService.releaseAvailability(booking.getFromDay(), booking.getToDay(), booking.getGuests());
-	    bookingRepository.deleteById(bookingId);
+		bookingRepository.deleteById(bookingId);
 	}
 
-//	@Transactional
-//	@Retryable(value = {BatchUpdateException.class, DataIntegrityViolationException.class, ObjectOptimisticLockingFailureException.class}, maxAttempts = MAX_ATTEMPTS)
-	private BookingResponse update(BookingResponse booking) throws BookingException, AvailabilityException, InputFormatException {
+	private BookingResponse update(BookingResponse booking) {
 		dailyAvailabilityService.validateAvailability(booking.getFromDay(), booking.getToDay(), booking.getGuests(), true);
 		dailyAvailabilityService.blockAvailability(booking.getFromDay(), booking.getToDay(), booking.getGuests());
 		bookingRepository.save(new Booking(booking));
 		return booking;
 	}
-	
-//	@Transactional
-//	@Retryable(value = {BatchUpdateException.class, DataIntegrityViolationException.class, ObjectOptimisticLockingFailureException.class}, maxAttempts = MAX_ATTEMPTS)
-//	private BookingResponse createOrUpdate(BookingRequest bookingRequest, Integer bookingId) throws BookingException, AvailabilityException, InputFormatException {
-//		dailyAvailabilityService.validateAvailability(bookingRequest.getFromDay(), bookingRequest.getToDay(), bookingRequest.getGuests(), true);
-//		dailyAvailabilityService.blockAvailability(bookingRequest.getFromDay(), bookingRequest.getToDay(), bookingRequest.getGuests());
-//		BookingResponse bookingResponse = new BookingResponse(bookingId, bookingRequest);
-//		bookingRepository.save(new Booking(bookingResponse));
-//		return bookingResponse;
-//	}
 	
 }

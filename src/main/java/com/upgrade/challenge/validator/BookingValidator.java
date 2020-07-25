@@ -25,12 +25,6 @@ public class BookingValidator {
 	@Value("${volcano.max_guests_capacity}")
 	private int MAX_CAPACITY;
 
-	
-	
-	// ver de sacar este formatter de aca y del properties, o usar el custom pattern para crear el local date.
-	@Value("${volcano.date_format}")
-	private String DATE_FORMAT;
-
 	private String ARRIVAL_DAYS_AHEAD_ERROR_MESSAGE;
 
 	private String ARRIVAL_UP_TO_DAYS_ERROR_MESSAGE;
@@ -39,21 +33,14 @@ public class BookingValidator {
 
 	private final String FROM_TO_ERROR_MESSAGE = "Checkin date should be prior to checkout date.";
 	
-	private String DATES_FORMAT_EXCEPTION = "Dates format error. It should be like %s";
-
-	private String NUMBER_FORMAT_EXCEPTION = "%s should be a positive number.";
-
 	private String NOT_ENOUGH_CAPACITY_EXCEPTION;
 	
 	private String EXPIRED_BOOKING_EXCEPTION = "It's too late to %s this booking.";
 
 	private final String PAST_DAY_EXCEPTION = "Checkin date is a past day.";
 
-	private final String GUESTS = "Guests";
-	
 	@PostConstruct
 	public void initialize() {
-		DATES_FORMAT_EXCEPTION = String.format(DATES_FORMAT_EXCEPTION, DATE_FORMAT);
 		ARRIVAL_DAYS_AHEAD_ERROR_MESSAGE = String.format("The campsite can be reserved minimum %d day(s) ahead of arrival.", MINIMUM_DAYS_AHEAD_OF_ARRIVAL);
 		ARRIVAL_UP_TO_DAYS_ERROR_MESSAGE = String.format("The campsite can be reserved up to %d month(s) in advance. Please try again with closer dates.", MONTHS_UP_TO_BOOKING);
 		STAY_LENGTH_ERROR_MESSAGE = String.format("The campsite can be reserved for max %d days.", MAX_BOOKING_DAYS);
@@ -64,12 +51,9 @@ public class BookingValidator {
 		if (guests > MAX_CAPACITY) {
 			throw new InputFormatException(String.format(NOT_ENOUGH_CAPACITY_EXCEPTION));
 		}
-		if (guests < 1) {
-			throw new InputFormatException(String.format(NUMBER_FORMAT_EXCEPTION, GUESTS));
-		}
 	}
 	
-	public void validateDateInput(LocalDate fromDay, LocalDate toDay, Boolean isBooking) {
+	public void validateDatesInput(LocalDate fromDay, LocalDate toDay, Boolean isBooking) {
 		LocalDate now = LocalDate.now();
 
 		if (fromDay.isBefore(now)) {

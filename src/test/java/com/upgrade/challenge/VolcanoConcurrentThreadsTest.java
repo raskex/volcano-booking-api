@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URI;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -45,13 +44,11 @@ public class VolcanoConcurrentThreadsTest {
 	private String urlAvailability;
 	
 	private final LocalDate now = LocalDate.now();
-//	private final LocalDate now = LocalDate.parse(LocalDate.now().toString(), DateTimeFormatter.ISO_DATE);
 
 	@LocalServerPort
 	private int port;
 	
 	private ConcurrentLinkedQueue<Integer> bookingsQueue = new ConcurrentLinkedQueue<Integer>();
-	private ConcurrentLinkedQueue<String> errorMessages = new ConcurrentLinkedQueue<String>();
 	
 	/**
 	 * Test the normal behavior of the app.
@@ -109,7 +106,6 @@ public class VolcanoConcurrentThreadsTest {
 		checkAvailability(now.plusDays(1), now.plusDays(37));
 		logger.info("-- END GET --");
 
-		printErrorMessages();
 		assertEquals(0, createFailures.get());
 		assertEquals(0, editFailures.get());
 		assertEquals(0, cancelFailures.get());
@@ -171,23 +167,9 @@ public class VolcanoConcurrentThreadsTest {
 		checkAvailability(now.plusDays(1), now.plusDays(6));
 		logger.info("-- END GET --");
 
-		printErrorMessages();
 		assertEquals(0, createFailures.get());
 		assertEquals(0, editFailures.get());
 		assertEquals(0, cancelFailures.get());
-	}
-	
-	private void printErrorMessages() {
-		logger.info("**************** printing error messages ****************");
-		logger.info("**************** printing error messages ****************");
-		logger.info("**************** printing error messages ****************");
-		logger.info("**************** printing error messages ****************");
-		if (errorMessages.isEmpty()) {
-			logger.info("NO ERRORS");
-		}
-		for (String error : errorMessages) {
-			logger.info("error: " + error);
-		}
 	}
 	
 	private void runMultithreaded(Runnable runnable, int threadCount) throws InterruptedException {
@@ -222,7 +204,6 @@ public class VolcanoConcurrentThreadsTest {
 			return true;
 		} else {
 			logger.info("Booking not created: " + response.getBody());
-			errorMessages.add(response.getBody());
 			return false;
 		}
 	}
@@ -247,7 +228,6 @@ public class VolcanoConcurrentThreadsTest {
 			return true;
 		} else {
 			logger.info("Booking could not be edited: " + response.getBody());
-			errorMessages.add(response.getBody());
 			return false;
 		}
 	}
@@ -268,8 +248,6 @@ public class VolcanoConcurrentThreadsTest {
 			return true;
 		}
 		logger.info("Booking could not be canceled: " + response.getBody());
-		errorMessages.add(response.getBody());
-
 		return false;
 	}
 

@@ -27,7 +27,7 @@ public class BookingRequest implements Serializable {
 	private LocalDate toDay;
 	
     @NotNull(message = "guests is required")
-    @Min(value=1, message= "guests should be a positive number")
+    @Min(value = 1, message= "guests should be a positive number")
 	private Integer guests;
 
     @NotNull(message = "firstName is required")
@@ -40,6 +40,7 @@ public class BookingRequest implements Serializable {
     @NotNull(message = "email is required")
 	private String email;
 	
-	public BookingRequest() {}
+	public BookingRequest() {
+	}
 
 }

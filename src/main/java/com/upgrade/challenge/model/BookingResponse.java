@@ -12,7 +12,7 @@ public class BookingResponse implements Serializable {
 
 	private static final long serialVersionUID = -6984345757381817804L;
 
-	private Integer id;
+	private Long id;
 	
 	private LocalDate fromDay;
 	
@@ -29,7 +29,8 @@ public class BookingResponse implements Serializable {
 	public BookingResponse() {
 	}
 
-	public BookingResponse(Integer id, LocalDate fromDay, LocalDate toDay, Integer guests, String firstName, String lastName, String email) {
+	public BookingResponse(Long id, LocalDate fromDay, LocalDate toDay, Integer guests, String firstName,
+			String lastName, String email) {
 		this.id = id;
 		this.fromDay = fromDay;
 		this.toDay = toDay;
@@ -39,11 +40,11 @@ public class BookingResponse implements Serializable {
 		this.email = email;
 	}
 	
-	public BookingResponse(Integer id, BookingRequest bookingRequest) {
+	public BookingResponse(Long id, BookingRequest bookingRequest) {
 		this.id = id;
 		this.fromDay = bookingRequest.getFromDay();
 		this.toDay = bookingRequest.getToDay();
-		this.guests = Integer.valueOf(bookingRequest.getGuests());
+		this.guests = bookingRequest.getGuests();
 		this.firstName = bookingRequest.getFirstName();
 		this.lastName = bookingRequest.getLastName();
 		this.email = bookingRequest.getEmail();

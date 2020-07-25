@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -70,10 +69,11 @@ public class DailyAvailabilityServiceTest {
 		when(validator.getMaxCapacity()).thenReturn(MAX_CAPACITY);
 		
 		List<DailyOccupation> days = new LinkedList<DailyOccupation>();
-		days.add(new DailyOccupation(now.plusDays(1).toString(), 2));
-		days.add(new DailyOccupation(now.plusDays(2).toString(), 3));
-		days.add(new DailyOccupation(now.plusDays(5).toString(), 10));
-		when(dailyAvailabilityRepository.findAllByDateBetweenOrderByDateAsc(anyString(), anyString())).thenReturn(days);
+		days.add(new DailyOccupation(now.plusDays(1), 2));
+		days.add(new DailyOccupation(now.plusDays(2), 3));
+		days.add(new DailyOccupation(now.plusDays(5), 10));
+		when(dailyAvailabilityRepository.findAllByDateBetweenOrderByDateAsc(any(LocalDate.class), any(LocalDate.class)))
+				.thenReturn(days);
 
 		List<DailyAvailability> expectedAvailability = new LinkedList<DailyAvailability>();
 		expectedAvailability.add(new DailyAvailability(now.plusDays(1), 8));
@@ -92,7 +92,7 @@ public class DailyAvailabilityServiceTest {
 			assertEquals(expectedAvailability.get(i).getDate(), currentAvailability.get(i).getDate());
 			assertEquals(expectedAvailability.get(i).getAvailability(), currentAvailability.get(i).getAvailability());
 		}
-		verify(validator, times(1)).validateDateInput(any(LocalDate.class), any(LocalDate.class), anyBoolean());
+		verify(validator, times(1)).validateDatesInput(any(LocalDate.class), any(LocalDate.class), anyBoolean());
 	}
 
 	@Test
@@ -101,10 +101,11 @@ public class DailyAvailabilityServiceTest {
 		when(validator.getMaxCapacity()).thenReturn(MAX_CAPACITY);
 		
 		List<DailyOccupation> days = new LinkedList<DailyOccupation>();
-		days.add(new DailyOccupation(now.plusDays(20).toString(), 2));
-		days.add(new DailyOccupation(now.plusDays(21).toString(), 3));
-		days.add(new DailyOccupation(now.plusDays(25).toString(), 10));
-		when(dailyAvailabilityRepository.findAllByDateBetweenOrderByDateAsc(anyString(), anyString())).thenReturn(days);
+		days.add(new DailyOccupation(now.plusDays(20), 2));
+		days.add(new DailyOccupation(now.plusDays(21), 3));
+		days.add(new DailyOccupation(now.plusDays(25), 10));
+		when(dailyAvailabilityRepository.findAllByDateBetweenOrderByDateAsc(any(LocalDate.class), any(LocalDate.class)))
+				.thenReturn(days);
 
 		List<DailyAvailability> expectedAvailability = new LinkedList<DailyAvailability>();
 		expectedAvailability.add(new DailyAvailability(now.plusDays(20), 8));
@@ -129,7 +130,7 @@ public class DailyAvailabilityServiceTest {
 			assertEquals(expectedAvailability.get(i).getDate(), currentAvailability.get(i).getDate());
 			assertEquals(expectedAvailability.get(i).getAvailability(), currentAvailability.get(i).getAvailability());
 		}
-		verify(validator, times(1)).validateDateInput(any(LocalDate.class), any(LocalDate.class), anyBoolean());
+		verify(validator, times(1)).validateDatesInput(any(LocalDate.class), any(LocalDate.class), anyBoolean());
 	}
 
 	@Test
@@ -138,10 +139,11 @@ public class DailyAvailabilityServiceTest {
 		when(validator.getMaxCapacity()).thenReturn(MAX_CAPACITY);
 		
 		List<DailyOccupation> days = new LinkedList<DailyOccupation>();
-		days.add(new DailyOccupation(now.plusDays(1).toString(), 2));
-		days.add(new DailyOccupation(now.plusDays(2).toString(), 10));
-		days.add(new DailyOccupation(now.plusDays(10).toString(), 7));
-		when(dailyAvailabilityRepository.findAllByDateBetweenOrderByDateAsc(anyString(), anyString())).thenReturn(days);
+		days.add(new DailyOccupation(now.plusDays(1), 2));
+		days.add(new DailyOccupation(now.plusDays(2), 10));
+		days.add(new DailyOccupation(now.plusDays(10), 7));
+		when(dailyAvailabilityRepository.findAllByDateBetweenOrderByDateAsc(any(LocalDate.class), any(LocalDate.class)))
+				.thenReturn(days);
 
 		List<DailyAvailability> expectedAvailability = new LinkedList<DailyAvailability>();
 		expectedAvailability.add(new DailyAvailability(now.plusDays(1), 8));
@@ -162,49 +164,24 @@ public class DailyAvailabilityServiceTest {
 			assertEquals(expectedAvailability.get(i).getDate(), currentAvailability.get(i).getDate());
 			assertEquals(expectedAvailability.get(i).getAvailability(), currentAvailability.get(i).getAvailability());
 		}
-		verify(validator, times(1)).validateDateInput(any(LocalDate.class), any(LocalDate.class), anyBoolean());
+		verify(validator, times(1)).validateDatesInput(any(LocalDate.class), any(LocalDate.class), anyBoolean());
 	}
-
-//	@Test(expected = InputFormatException.class)
-//	public void testGetAvailabilityWrongDateFormat() throws BookingException, InputFormatException {
-//		dailyAvailabilityService.getAvailability(null, "20f20-09-03");
-//	}
-
-//	@Test(expected = BookingException.class)
-//	public void testGetAvailabilityAlreadyPastFromDate() throws BookingException, InputFormatException {
-//		dailyAvailabilityService.getAvailability(now.minusDays(1).toString(), null);
-//	}
-
-//	@Test(expected = BookingException.class)
-//	public void testGetAvailabilityArrivalToday() throws BookingException, InputFormatException {
-//		dailyAvailabilityService.getAvailability(now.toString(), null);
-//	}
-
-//	@Test(expected = BookingException.class)
-//	public void testGetAvailabilityArrivalMoreThanOneMonth() throws BookingException, InputFormatException {
-//		dailyAvailabilityService.getAvailability(now.plusDays(33).toString(), null);
-//	}
-
-//	@Test(expected = BookingException.class)
-//	public void testGetAvailabilityDepartureBeforeArrival() throws BookingException, InputFormatException {
-//		dailyAvailabilityService.getAvailability(now.plusDays(10).toString(), now.plusDays(5).toString());
-//	}
 
 	@Test
 	public void testValidateAvailabilityOK() throws AvailabilityException, BookingException, InputFormatException {
-		when(dailyAvailabilityRepository.existsByDateBetweenAndGuestsGreaterThan(anyString(), anyString(), anyInt()))
-				.thenReturn(false);
+		when(dailyAvailabilityRepository.existsByDateBetweenAndGuestsGreaterThan(any(LocalDate.class),
+				any(LocalDate.class), anyInt())).thenReturn(false);
 
 		dailyAvailabilityService.validateAvailability(now.plusDays(2), now.plusDays(3), 2, false);
 
-		verify(validator, times(1)).validateDateInput(any(LocalDate.class), any(LocalDate.class), anyBoolean());
+		verify(validator, times(1)).validateDatesInput(any(LocalDate.class), any(LocalDate.class), anyBoolean());
 		verify(validator, times(1)).validateGuestsInput(anyInt());
 	}
 
 	@Test(expected = AvailabilityException.class)
 	public void testValidateAvailabilityNotAvailability() throws AvailabilityException, BookingException, InputFormatException {
-		when(dailyAvailabilityRepository.existsByDateBetweenAndGuestsGreaterThan(anyString(), anyString(), anyInt()))
-				.thenReturn(true);
+		when(dailyAvailabilityRepository.existsByDateBetweenAndGuestsGreaterThan(any(LocalDate.class),
+				any(LocalDate.class), anyInt())).thenReturn(true);
 
 		dailyAvailabilityService.validateAvailability(now.plusDays(2), now.plusDays(3), 2,
 				false);

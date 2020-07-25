@@ -1,5 +1,7 @@
 package com.upgrade.challenge.model.dto;
 
+import java.time.LocalDate;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -22,7 +24,7 @@ public class DailyOccupation {
 	private Integer id;
 	
 	@Column(unique = true)
-	private String date;
+	private LocalDate date;
 	
 	@Column
 	@JsonProperty("availability")
@@ -33,7 +35,7 @@ public class DailyOccupation {
 
 	public DailyOccupation() {}
 	
-	public DailyOccupation(String date, Integer guests) {
+	public DailyOccupation(LocalDate date, Integer guests) {
 		this.date = date;
 		this.guests = guests;
 	}

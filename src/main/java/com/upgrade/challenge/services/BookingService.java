@@ -48,7 +48,7 @@ public class BookingService {
 			ObjectOptimisticLockingFailureException.class }, maxAttempts = MAX_ATTEMPTS)
 	public BookingResponse add(BookingRequest bookingRequest) {
 		dailyAvailabilityService.validateAvailability(bookingRequest.getFromDay(), bookingRequest.getToDay(),
-				bookingRequest.getGuests(), true);
+				bookingRequest.getGuests());
 		dailyAvailabilityService.blockAvailability(bookingRequest.getFromDay(), bookingRequest.getToDay(),
 				bookingRequest.getGuests());
 		return new BookingResponse(bookingRepository.save(new Booking(bookingRequest)).getId(), bookingRequest);
@@ -98,7 +98,7 @@ public class BookingService {
 	}
 
 	private BookingResponse update(BookingResponse booking) {
-		dailyAvailabilityService.validateAvailability(booking.getFromDay(), booking.getToDay(), booking.getGuests(), true);
+		dailyAvailabilityService.validateAvailability(booking.getFromDay(), booking.getToDay(), booking.getGuests());
 		dailyAvailabilityService.blockAvailability(booking.getFromDay(), booking.getToDay(), booking.getGuests());
 		bookingRepository.save(new Booking(booking));
 		return booking;

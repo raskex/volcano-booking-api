@@ -1,11 +1,9 @@
 package com.upgrade.challenge.services;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -31,19 +29,14 @@ public class DailyAvailabilityService {
 	private BookingValidator validator;
 
 	public List<DailyAvailability> getAvailability(LocalDate from, LocalDate to) {
-		LocalDate now = LocalDate.parse(LocalDate.now().toString(), DateTimeFormatter.ISO_DATE);
-		if (Objects.isNull(from) && Objects.isNull(to)) {
+		LocalDate now = LocalDate.now();
+		if (StringUtils.isEmpty(from)) {
 			from = now.plusDays(validator.getMinimumDaysAheadOfArrival());
-			to = now.plusMonths(validator.getMonthsUpToBooking());
-		} else {
-			if (StringUtils.isEmpty(from)) {
-				from = now.plusDays(validator.getMinimumDaysAheadOfArrival());
-			}
-			if (StringUtils.isEmpty(to)) {
-				to = now.plusMonths(validator.getMonthsUpToBooking());
-			}
-			validator.validateDatesInput(from, to, false);
 		}
+		if (StringUtils.isEmpty(to)) {
+			to = now.plusMonths(validator.getMonthsUpToBooking());
+		}
+		validator.validateDatesInput(from, to, false);
 		List<DailyAvailability> availabilityResult = new LinkedList<DailyAvailability>();
 
 		LocalDate consecutiveDate = from;
@@ -68,8 +61,8 @@ public class DailyAvailabilityService {
 		return availabilityResult;
 	}
 
-	public void validateAvailability(LocalDate from, LocalDate to, Integer guests, Boolean isBooking) {
-		validator.validateDatesInput(from, to, isBooking);
+	public void validateAvailability(LocalDate from, LocalDate to, Integer guests) {
+		validator.validateDatesInput(from, to, true);
 		validator.validateGuestsInput(guests);
 		if (dailyOccupationRepository.existsByDateBetweenAndGuestsGreaterThan(
 				from, to.minusDays(1), validator.getMaxCapacity() - guests)) {
@@ -100,13 +93,11 @@ public class DailyAvailabilityService {
 
 	@Transactional
 	public void releaseAvailability(LocalDate from, LocalDate to, Integer guests) {
-		List<DailyOccupation> daysToRelease = new LinkedList<DailyOccupation>();
 		List<DailyOccupation> occupability = dailyOccupationRepository.findAllByDateBetween(from, to.minusDays(1));
 		for (DailyOccupation dailyOccupation : occupability) {
 			dailyOccupation.setGuests(dailyOccupation.getGuests() - guests);
-			daysToRelease.add(dailyOccupation);
 		}
-		dailyOccupationRepository.saveAll(daysToRelease);
+		dailyOccupationRepository.saveAll(occupability);
 	}
 
 }

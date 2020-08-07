@@ -90,14 +90,14 @@ public class BookingServiceTest {
 
 		assertEquals(expectedBooking.getId(), createdBooking.getId());
 		verify(bookingRepository, times(1)).save(any(Booking.class));
-		verify(dailyAvailabilityService, times(1)).validateAvailability(any(LocalDate.class), any(LocalDate.class), anyInt(), anyBoolean());
+		verify(dailyAvailabilityService, times(1)).validateAvailability(any(LocalDate.class), any(LocalDate.class), anyInt());
 		verify(dailyAvailabilityService, times(1)).blockAvailability(any(LocalDate.class), any(LocalDate.class), anyInt());
     }
     
     @Test(expected = AvailabilityException.class)
     public void testAddNoAvailability() throws BookingException, AvailabilityException, InputFormatException {
 		doThrow(AvailabilityException.class).when(dailyAvailabilityService).validateAvailability(any(LocalDate.class),
-				any(LocalDate.class), anyInt(), anyBoolean());
+				any(LocalDate.class), anyInt());
 
     	bookingService.add(createBookingRequest());
     }

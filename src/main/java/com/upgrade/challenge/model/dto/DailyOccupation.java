@@ -9,8 +9,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Version;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import lombok.Getter;
 import lombok.Setter;
 
@@ -27,7 +25,6 @@ public class DailyOccupation {
 	private LocalDate date;
 	
 	@Column
-	@JsonProperty("availability")
 	private Integer guests;
 	
 	@Version

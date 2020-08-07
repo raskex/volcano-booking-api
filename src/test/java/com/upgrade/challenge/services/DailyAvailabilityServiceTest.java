@@ -172,7 +172,7 @@ public class DailyAvailabilityServiceTest {
 		when(dailyAvailabilityRepository.existsByDateBetweenAndGuestsGreaterThan(any(LocalDate.class),
 				any(LocalDate.class), anyInt())).thenReturn(false);
 
-		dailyAvailabilityService.validateAvailability(now.plusDays(2), now.plusDays(3), 2, false);
+		dailyAvailabilityService.validateAvailability(now.plusDays(2), now.plusDays(3), 2);
 
 		verify(validator, times(1)).validateDatesInput(any(LocalDate.class), any(LocalDate.class), anyBoolean());
 		verify(validator, times(1)).validateGuestsInput(anyInt());
@@ -183,8 +183,7 @@ public class DailyAvailabilityServiceTest {
 		when(dailyAvailabilityRepository.existsByDateBetweenAndGuestsGreaterThan(any(LocalDate.class),
 				any(LocalDate.class), anyInt())).thenReturn(true);
 
-		dailyAvailabilityService.validateAvailability(now.plusDays(2), now.plusDays(3), 2,
-				false);
+		dailyAvailabilityService.validateAvailability(now.plusDays(2), now.plusDays(3), 2);
 	}
 
 }
